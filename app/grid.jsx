@@ -61,20 +61,22 @@ const TearStripStyles = () => (
         }
 
         .tear-strip {
-            font-size: 1rem;
-            font-weight: bold;
-            width: 100%;
-            height: 70px;
-            display: grid;
-            place-items: center;
-            position: relative;
-            border-bottom: 2px dashed hsl(0 0% 81%);
-            border-radius: 2rem 2rem 0 0;
-            background: linear-gradient(hsl(0 0% 91%), hsl(0 0% 91%)) padding-box;
-            color: hsl(0, 0%, 70%);
-            z-index: 50; /* High Z-Index for the container */
-            overflow: visible !important; /* CRITICAL: Allows strip to leave the box */
-        }
+	        font-size: 1.3rem;
+	        font-weight: bold;
+	        width: clamp(300px, 470px, 28vw);
+	        width: 344px;
+	        height: 78px;
+	        display: grid;
+	        place-items: center;
+        /*	translate: 0 -80%;*/
+	        position: relative;
+	        border: 3px dashed hsl(0 0% 81%);
+	        border-radius: 100px;
+	        background: linear-gradient(hsl(0 0% 91%), hsl(0 0% 91%)) padding-box;
+	        color: hsl(0, 0%, 70%);
+            z-index: 50;
+            overflow: visible; !important
+}
 
         .tear-strip__content {
             position: absolute;
@@ -88,78 +90,75 @@ const TearStripStyles = () => (
         }
 
         .tear-strip__strip {
-            position: absolute;
-            inset: 0;
-            background: var(--bg);
-            display: flex;
-            border-radius: 2rem 2rem 0 0;
-            align-items: center;
-            justify-content: center;
-            clip-path: inset(-100% 0 -100% 1px);
-            color: hsl(0, 0%, 71%);
-            font-weight: 500;
-            z-index: 100; /* CRITICAL: Must be higher than backing */
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-        }
+	position: absolute;
+	inset: 0;
+	background: var(--bg);
+	display: flex;
+	border-radius: 100px;
+	align-items: center;
+	justify-content: center;
+	clip-path: inset(-100% 0 -100% 1px);
+	color: hsl(0, 0%, 71%);
+	font-weight: 500;
+}
 
         .tear-strip__shadow {
-            position: absolute;
-            height: 100%;
-            width: 20px;
-            background: linear-gradient(90deg, transparent, hsl(0 0% 10% / 0.5));
-            filter: blur(8px);
-            transform-origin: 100% 50%;
-            left: 0;
-            opacity: 0;
-            pointer-events: none;
-            z-index: 90;
-        }
+	position: absolute;
+	height: 100%;
+	width: 20px;
+	background: linear-gradient(90deg, transparent, hsl(0 0% 10% / 0.5));
+	filter: blur(8px);
+	transform-origin: 100% 50%;
+	left: 0;
+	opacity: 0;
+    z-index: 90;
+}
 
         .tear-strip__back {
-            position: absolute;
-            height: 100%;
-            width: 100%;
-            border-radius: 2rem 2rem 0 0;
-            right: 100%;
-            pointer-events: none;
-            z-index: 80;
-        }
+	position: absolute;
+	height: 100%;
+	width: 100%;
+	border-radius: 100px;
+	right: 100%;
+    z-index: 80;
+}
 
         .tear-strip__backing {
-            background: linear-gradient(90deg, hsl(0 0% calc(var(--tab-darkness, 40) * 1%) / var(--bg-alpha, 1)), hsl(0 0% 100% / var(--bg-alpha, 1)), hsl(0 0% 80% / var(--bg-alpha, 1)));
-            background-position: 100% 50%;
-            background-repeat: no-repeat;
-            background-color: hsl(0 0% 93%);
-            background-size: calc(var(--bg-size, 0) * 1px) 100%;
-            position: absolute;
-            inset: 0;
-            border-radius: 2rem 2rem 0 0;
-        }
+	background: linear-gradient(90deg, hsl(0 0% calc(var(--tab-darkness, 40) * 1%) / var(--bg-alpha, 1)), hsl(0 0% 100% / var(--bg-alpha, 1)), hsl(0 0% 80% / var(--bg-alpha, 1)));
+	background-position: 100% 50%;
+	background-repeat: no-repeat;
+	background-color: hsl(0 0% 93%);
+	background-size: calc(var(--bg-size, 0) * 1px) 100%;
+	position: absolute;
+	inset: 0;
+	border-radius: 1000px;
+}
 
         .tear-strip__backing::before {
-            content: "";
-            position: absolute;
-            inset: 0 -8px 0 0;
-            filter: blur(4px);
-            background: radial-gradient(hsl(0 0% 10% / 0.5), transparent 80%);
-            border-radius: 1000px;
-            z-index: -1;
-            opacity: var(--shadow-reveal, 0);
-        }
+	content: "";
+	position: absolute;
+	inset: 0 -8px 0 0;
+	filter: blur(4px);
+	background: radial-gradient(hsl(0 0% 10% / 0.5), transparent 80%);
+	border-radius: 1000px;
+	z-index: -1;
+	opacity: var(--shadow-reveal, 0);
+}
 
         .tear-strip__back-shadow {
-            position: absolute;
-            border-radius: 1000px;
-            background: transparent;
-            right: 0;
-            top: 50%;
-            height: 100%;
-            translate: 0 -50%;
-            width: calc((var(--shadow-width) * var(--shadow-multiplier, 0.8)) * 1px);
-            z-index: -1;
-            min-width: 100px;
-            box-shadow: 0 0 calc(var(--shadow-spread, 0) * 60px) hsl(10 0% 50% / 0.35);
-        }
+	position: absolute;
+	border-radius: 1000px;
+	background: transparent;
+	right: 0;
+	top: 50%;
+	height: 100%;
+	translate: 0 -50%;
+	width: calc((var(--shadow-width) * var(--shadow-multiplier, 0.8)) * 1px);
+	z-index: -1;
+	min-width: 100px;
+	box-shadow:
+		0 0 calc(var(--shadow-spread, 0) * 60px) hsl(10 0% 50% / 0.35);
+}
 
         .tear-strip__strip svg {
             background: hsl(78, 75%, 57%);
@@ -168,11 +167,10 @@ const TearStripStyles = () => (
             height: 40px;
             padding: 8px;
             position: absolute;
-            left: 11px;
+            left: 10px;
             color: white;
             stroke-width: 2.5px;
             transform-origin: 100% 50%;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
 
         .tear-strip__handle {
@@ -197,10 +195,9 @@ const TearStripStyles = () => (
 
         .strip-text {
              pointer-events: none;
-             font-size: 0.8rem;
-             text-transform: uppercase;
-             letter-spacing: 0.05em;
-             color: #854d0e; 
+             font-size: 1rem;
+             font-weight: 500;
+             color: hsl(0, 0%, 71%); 
         }
     `}} />
 );
