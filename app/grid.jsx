@@ -6,7 +6,9 @@ import {
     BatteryCharging,
     Zap,
     Car,
-    Wind
+    Wind,
+    PlugZap,
+    Cable
 } from 'lucide-react';
 
 // --- Constants & Config ---
@@ -475,11 +477,11 @@ const WidgetCard = ({ widget, isGhost = false, isValid = true, style, onRemove }
                 return (
                     <div className="p-5 flex flex-col justify-between h-full bg-gradient-to-br from-green-500/20 to-transparent">
                         <div className="flex items-center space-x-2 text-green-400">
-                            <BatteryCharging size={20} />
+                            <Cable size={20} />
                             <span className="font-semibold text-sm font-text">Charging</span>
                         </div>
                         <div className="flex flex-col items-center justify-center">
-                            <span className="text-4xl font-bold tracking-tighter font-rounded">100%</span>
+                            <span className="text-4xl font-bold tracking-normal font-rounded">100%</span>
                             <span className="text-xs text-white/50 mt-1 font-text">MacBook Pro</span>
                         </div>
                         <div className="w-full bg-white/10 h-1.5 rounded-full overflow-hidden">
@@ -530,7 +532,7 @@ const WidgetCard = ({ widget, isGhost = false, isValid = true, style, onRemove }
                             {['Call Mom', 'Buy Milk', 'eat food'].map((item, i) => (
                                 <li key={i} className="flex items-center space-x-3 group">
                                     <div className="w-4 h-4 rounded-full border-2 border-white/30 group-hover:border-orange-400 transition-colors" />
-                                    <span className="text-sm font-medium truncate font-text">{item}</span>
+                                    <span className="text-sm font-medium truncate font-text tracking-tight">{item}</span>
                                 </li>
                             ))}
                         </ul>
@@ -544,7 +546,7 @@ const WidgetCard = ({ widget, isGhost = false, isValid = true, style, onRemove }
                         </div>
                         <div className="relative z-10 flex flex-col justify-between h-full">
                             <div className="flex items-center space-x-2 text-zinc-400">
-                                <Zap size={16} className="fill-yellow-400 text-yellow-400" />
+                                <PlugZap size={16} className="fill-yellow-400 text-yellow-400" />
                                 <span className="text-xs font-bold tracking-wider uppercase font-rounded">Tesla Model 3</span>
                             </div>
                             <div className="flex justify-between items-end">
