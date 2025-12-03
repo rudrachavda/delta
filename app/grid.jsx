@@ -10,8 +10,8 @@ import {
 } from 'lucide-react';
 
 // --- Constants & Config ---
-const GRID_SIZE = 160; 
-const GAP = 24;        
+const GRID_SIZE = 160;
+const GAP = 24;
 
 // --- Helper Functions ---
 const loadScript = (src) => {
@@ -45,11 +45,12 @@ const getDimensions = (size) => {
     };
 };
 
-// --- CSS from Your Provided "Tear Strip" Code ---
+// --- CSS ---
 const TearStripStyles = () => (
-    <style dangerouslySetInnerHTML={{__html: `
+    <style dangerouslySetInnerHTML={{
+        __html: `
         :root {
-            --bg: #fef08a; /* Matched to Sticky Note Yellow-200 */
+            --bg: #fff; /* Sticky Note Yellow */
             --tab-darkness: 40;
             --bg-alpha: 1;
             --shadow-reveal: 0;
@@ -62,16 +63,17 @@ const TearStripStyles = () => (
         .tear-strip {
             font-size: 1rem;
             font-weight: bold;
-            width: 100%; /* Adapted to fit widget width */
+            width: 100%;
             height: 70px;
             display: grid;
             place-items: center;
             position: relative;
-            border-bottom: 2px dashed hsl(0 0% 81%); /* Changed to bottom border to merge with note */
-            border-radius: 2rem 2rem 0 0; /* Match widget rounded corners */
+            border-bottom: 2px dashed hsl(0 0% 81%);
+            border-radius: 2rem 2rem 0 0;
             background: linear-gradient(hsl(0 0% 91%), hsl(0 0% 91%)) padding-box;
             color: hsl(0, 0%, 70%);
-            z-index: 20;
+            z-index: 50; /* High Z-Index for the container */
+            overflow: visible !important; /* CRITICAL: Allows strip to leave the box */
         }
 
         .tear-strip__content {
@@ -82,6 +84,7 @@ const TearStripStyles = () => (
             color: #854d0e;
             pointer-events: none;
             right: 2rem;
+            z-index: 0;
         }
 
         .tear-strip__strip {
@@ -89,12 +92,14 @@ const TearStripStyles = () => (
             inset: 0;
             background: var(--bg);
             display: flex;
-            border-radius: 2rem 2rem 0 0; /* Match widget rounded corners */
+            border-radius: 2rem 2rem 0 0;
             align-items: center;
             justify-content: center;
             clip-path: inset(-100% 0 -100% 1px);
             color: hsl(0, 0%, 71%);
             font-weight: 500;
+            z-index: 100; /* CRITICAL: Must be higher than backing */
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
         }
 
         .tear-strip__shadow {
@@ -107,6 +112,7 @@ const TearStripStyles = () => (
             left: 0;
             opacity: 0;
             pointer-events: none;
+            z-index: 90;
         }
 
         .tear-strip__back {
@@ -116,6 +122,7 @@ const TearStripStyles = () => (
             border-radius: 2rem 2rem 0 0;
             right: 100%;
             pointer-events: none;
+            z-index: 80;
         }
 
         .tear-strip__backing {
@@ -179,30 +186,16 @@ const TearStripStyles = () => (
             scale: 1.35;
             transition: background 0.2s;
             cursor: grab;
-            z-index: 50;
+            z-index: 200; /* Highest Z-Index for interaction */
         }
         .tear-strip__handle:active {
             cursor: grabbing;
         }
-
         .tear-strip__handle:hover:not(:active) {
             --alpha: 0.25;
         }
 
-        .sr-only {
-            position: absolute;
-            width: 1px;
-            height: 1px;
-            padding: 0;
-            margin: -1px;
-            overflow: hidden;
-            clip: rect(0, 0, 0, 0);
-            white-space: nowrap;
-            border-width: 0;
-        }
-        
         .strip-text {
-             margin-left: 2.5rem;
              pointer-events: none;
              font-size: 0.8rem;
              text-transform: uppercase;
@@ -212,180 +205,170 @@ const TearStripStyles = () => (
     `}} />
 );
 
-// --- The Updated TearStrip Component ---
+// --- TearStrip Component ---
 const TearStrip = ({ children, onTearComplete }) => {
-  const stripRef = useRef(null)
-  const tabRef = useRef(null)
-  const backingRef = useRef(null)
-  const handleRef = useRef(null)
-  const iconRef = useRef(null)
-  const draggableRef = useRef(null)
-  const shadowRef = useRef(null)
-  const proxyRef = useRef(null)
-  const [torn, setTorn] = useState(false)
-  const [gsapLoaded, setGsapLoaded] = useState(false);
+    const stripRef = useRef(null)
+    const tabRef = useRef(null)
+    const backingRef = useRef(null)
+    const handleRef = useRef(null)
+    const iconRef = useRef(null)
+    const draggableRef = useRef(null)
+    const shadowRef = useRef(null)
+    const proxyRef = useRef(null)
+    const [torn, setTorn] = useState(false)
+    const [gsapLoaded, setGsapLoaded] = useState(false);
 
-  // Load GSAP
-  useEffect(() => {
-    const loadDependencies = async () => {
-        try {
-            if (!window.gsap) await loadScript('https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js');
-            if (!window.Draggable) await loadScript('https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/Draggable.min.js');
-            window.gsap.registerPlugin(window.Draggable);
-            setGsapLoaded(true);
-        } catch (e) {
-            console.error("GSAP load failed", e);
-        }
-    };
-    loadDependencies();
-  }, []);
+    useEffect(() => {
+        const loadDependencies = async () => {
+            try {
+                if (!window.gsap) await loadScript('https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js');
+                if (!window.Draggable) await loadScript('https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/Draggable.min.js');
+                window.gsap.registerPlugin(window.Draggable);
+                setGsapLoaded(true);
+            } catch (e) {
+                console.error("GSAP load failed", e);
+            }
+        };
+        loadDependencies();
+    }, []);
 
-  useEffect(() => {
-    if (!gsapLoaded || !stripRef.current) return;
-    if (!proxyRef.current) proxyRef.current = document.createElement('div');
+    useEffect(() => {
+        if (!gsapLoaded || !stripRef.current) return;
+        if (!proxyRef.current) proxyRef.current = document.createElement('div');
 
-    const gsap = window.gsap;
-    const Draggable = window.Draggable;
-    const DISTANCE_OF_RESISTANCE = stripRef.current.offsetWidth * 0.25;
-    const DROP_PROPS = {
-        yPercent: 1000,
-        rotate: -20,
-        opacity: 0,
-        duration: 0.65,
-    };
+        const gsap = window.gsap;
+        const Draggable = window.Draggable;
+        const DISTANCE_OF_RESISTANCE = stripRef.current.offsetWidth * 0.25;
+        const DROP_PROPS = {
+            yPercent: 1000,
+            rotate: -20,
+            opacity: 0,
+            duration: 0.65,
+        };
 
-    gsap.set(handleRef.current, { x: 0, y: 0 });
+        gsap.set(handleRef.current, { x: 0, y: 0 });
 
-    draggableRef.current = Draggable.create(proxyRef.current, {
-      type: 'x,y',
-      trigger: handleRef.current,
-      allowContextMenu: true,
-      dragResistance: 0.99,
-      
-      onDrag: function (event) {
-        if (this.__void) return false;
+        draggableRef.current = Draggable.create(proxyRef.current, {
+            type: 'x,y',
+            trigger: handleRef.current,
+            allowContextMenu: true,
+            dragResistance: 0.99,
 
-        // If torn, drag the strip element (visual only)
-        if (this.__torn) {
-          return gsap.to(tabRef.current, {
-            x: this.x - stripRef.current.offsetWidth * 2,
-            y: this.y,
-            duration: 0.1,
-          });
-        }
+            onDrag: function (event) {
+                if (this.__void) return false;
 
-        const HANDLE_HEIGHT = handleRef.current.offsetHeight;
-        if (this.y < this.startY - HANDLE_HEIGHT * 0.5 || this.y > this.startY + HANDLE_HEIGHT * 0.5) {
-          return (this.__void = true);
-        }
+                if (this.__torn) {
+                    return gsap.to(tabRef.current, {
+                        x: this.x - stripRef.current.offsetWidth * 2,
+                        y: this.y,
+                        duration: 0.1,
+                    });
+                }
 
-        // --- Physics: Drag Resistance ---
-        if (this.x > this.startX) {
-          this.dragResistance = gsap.utils.clamp(
-            0,
-            this.dragResistance,
-            gsap.utils.mapRange(0, DISTANCE_OF_RESISTANCE, 0.99, 0, this.x)
-          );
-        }
+                const HANDLE_HEIGHT = handleRef.current.offsetHeight;
+                if (this.y < this.startY - HANDLE_HEIGHT * 0.5 || this.y > this.startY + HANDLE_HEIGHT * 0.5) {
+                    return (this.__void = true);
+                }
 
-        if (!this.__torn) {
-          const clip = gsap.utils.mapRange(0, stripRef.current.offsetWidth * 2, 0, stripRef.current.offsetWidth, this.x);
-          gsap.set(tabRef.current, { clipPath: `inset(-100% -1000% -100% ${clip}px)` });
-        }
+                if (this.x > this.startX) {
+                    this.dragResistance = gsap.utils.clamp(
+                        0,
+                        this.dragResistance,
+                        gsap.utils.mapRange(0, DISTANCE_OF_RESISTANCE, 0.99, 0, this.x)
+                    );
+                }
 
-        // Set custom props
-        gsap.set(stripRef.current, {
-          '--tab-darkness': gsap.utils.clamp(10, 80, gsap.utils.mapRange(0, stripRef.current.offsetWidth, 10, 80, this.x)),
-          '--shadow-spread': gsap.utils.clamp(0, 1, gsap.utils.mapRange(stripRef.current.offsetWidth * 0.25, stripRef.current.offsetWidth, 0, 1, this.x)),
-          '--shadow-reveal': gsap.utils.clamp(0, 1, gsap.utils.mapRange(stripRef.current.offsetWidth * 0.1, stripRef.current.offsetWidth * 0.2, 0, 1, this.x)),
-          '--shadow-width': this.x * 0.5,
-          '--bg-size': this.x * 0.5,
-          '--shadow-multiplier': gsap.utils.clamp(0.8, 0.9, gsap.utils.mapRange(stripRef.current.offsetWidth, stripRef.current.offsetWidth * 2, 0.8, 0.9, this.x)),
-        });
+                if (!this.__torn) {
+                    const clip = gsap.utils.mapRange(0, stripRef.current.offsetWidth * 2, 0, stripRef.current.offsetWidth, this.x);
+                    gsap.set(tabRef.current, { clipPath: `inset(-100% -1000% -100% ${clip}px)` });
+                }
 
-        // Icon movement
-        gsap.set(iconRef.current, {
-          scaleX: gsap.utils.clamp(0.75, 1, gsap.utils.mapRange(0, DISTANCE_OF_RESISTANCE, 1, 0.75, this.x)),
-          xPercent: gsap.utils.clamp(0, 50, gsap.utils.mapRange(0, DISTANCE_OF_RESISTANCE, 0, 50, this.x)),
-        });
+                gsap.set(stripRef.current, {
+                    '--tab-darkness': gsap.utils.clamp(10, 80, gsap.utils.mapRange(0, stripRef.current.offsetWidth, 10, 80, this.x)),
+                    '--shadow-spread': gsap.utils.clamp(0, 1, gsap.utils.mapRange(stripRef.current.offsetWidth * 0.25, stripRef.current.offsetWidth, 0, 1, this.x)),
+                    '--shadow-reveal': gsap.utils.clamp(0, 1, gsap.utils.mapRange(stripRef.current.offsetWidth * 0.1, stripRef.current.offsetWidth * 0.2, 0, 1, this.x)),
+                    '--shadow-width': this.x * 0.5,
+                    '--bg-size': this.x * 0.5,
+                    '--shadow-multiplier': gsap.utils.clamp(0.8, 0.9, gsap.utils.mapRange(stripRef.current.offsetWidth, stripRef.current.offsetWidth * 2, 0.8, 0.9, this.x)),
+                });
 
-        // Backing movement
-        gsap.set(backingRef.current, { transformOrigin: '0% 50%', x: this.x });
+                gsap.set(iconRef.current, {
+                    scaleX: gsap.utils.clamp(0.75, 1, gsap.utils.mapRange(0, DISTANCE_OF_RESISTANCE, 1, 0.75, this.x)),
+                    xPercent: gsap.utils.clamp(0, 50, gsap.utils.mapRange(0, DISTANCE_OF_RESISTANCE, 0, 50, this.x)),
+                });
 
-        gsap.set(shadowRef.current, {
-          x: this.x * 0.5,
-          xPercent: -90,
-          scaleX: gsap.utils.clamp(1, 2, gsap.utils.mapRange(stripRef.current.offsetWidth, stripRef.current.offsetWidth * 2, 1, 2, this.x)),
-          opacity: this.x > stripRef.current.offsetWidth
-              ? gsap.utils.clamp(0, 1, gsap.utils.mapRange(stripRef.current.offsetWidth, stripRef.current.offsetWidth * 2, 1, 0, this.x))
-              : gsap.utils.clamp(0, 1, gsap.utils.mapRange(15, 100, 0, 1, this.x)),
-        });
+                gsap.set(backingRef.current, { transformOrigin: '0% 50%', x: this.x });
 
-        // Handle position
-        const x = this.__torn ? this.x : gsap.utils.clamp(0, stripRef.current.offsetWidth, this.x);
-        gsap.set(handleRef.current, { x });
+                gsap.set(shadowRef.current, {
+                    x: this.x * 0.5,
+                    xPercent: -90,
+                    scaleX: gsap.utils.clamp(1, 2, gsap.utils.mapRange(stripRef.current.offsetWidth, stripRef.current.offsetWidth * 2, 1, 2, this.x)),
+                    opacity: this.x > stripRef.current.offsetWidth
+                        ? gsap.utils.clamp(0, 1, gsap.utils.mapRange(stripRef.current.offsetWidth, stripRef.current.offsetWidth * 2, 1, 0, this.x))
+                        : gsap.utils.clamp(0, 1, gsap.utils.mapRange(15, 100, 0, 1, this.x)),
+                });
 
-        // Backing scale (Depth perception)
-        if (this.x < stripRef.current.offsetWidth) {
-            gsap.set(backingRef.current, { scaleX: gsap.utils.clamp(0.9, 1, gsap.utils.mapRange(0, DISTANCE_OF_RESISTANCE * 2, 1, 0.9, this.x)) });
-        } else {
-            gsap.set(backingRef.current, { scaleX: gsap.utils.clamp(0.9, 1, gsap.utils.mapRange(stripRef.current.offsetWidth * 2 - DISTANCE_OF_RESISTANCE * 2, stripRef.current.offsetWidth * 2, 0.9, 1, this.x)) });
-        }
+                const x = this.__torn ? this.x : gsap.utils.clamp(0, stripRef.current.offsetWidth, this.x);
+                gsap.set(handleRef.current, { x });
 
-        // Tear Trigger
-        if (this.x > stripRef.current.offsetWidth * 1.99) {
-          this.__torn = true;
-          gsap.to(backingRef.current, { xPercent: 25, ease: 'elastic.out(1, 0.9)', '--bg-alpha': 0.75 });
-        }
-      },
+                if (this.x < stripRef.current.offsetWidth) {
+                    gsap.set(backingRef.current, { scaleX: gsap.utils.clamp(0.9, 1, gsap.utils.mapRange(0, DISTANCE_OF_RESISTANCE * 2, 1, 0.9, this.x)) });
+                } else {
+                    gsap.set(backingRef.current, { scaleX: gsap.utils.clamp(0.9, 1, gsap.utils.mapRange(stripRef.current.offsetWidth * 2 - DISTANCE_OF_RESISTANCE * 2, stripRef.current.offsetWidth * 2, 0.9, 1, this.x)) });
+                }
 
-      onRelease: function (event) {
-        this.__void = false;
-        if (this.__torn) {
-          gsap.to(tabRef.current, {
-            ...DROP_PROPS,
-            onComplete: () => {
-              setTorn(true);
-              if(onTearComplete) onTearComplete();
+                if (this.x > stripRef.current.offsetWidth * 1.99) {
+                    this.__torn = true;
+                    gsap.to(backingRef.current, { xPercent: 25, ease: 'elastic.out(1, 0.9)', '--bg-alpha': 0.75 });
+                }
             },
-          });
-        } else {
-            // Reset animation if released before tear
-            gsap.to([handleRef.current, backingRef.current, shadowRef.current], { x: 0, duration: 0.5 });
-            gsap.to(tabRef.current, { clipPath: `inset(-100% -100% -100% 0px)`, duration: 0.5 });
-            gsap.set(proxyRef.current, { x: 0, y: 0 });
-        }
-      },
-    });
 
-    return () => {
-        if (draggableRef.current && draggableRef.current[0]) draggableRef.current[0].kill();
-    };
-  }, [gsapLoaded]);
+            onRelease: function (event) {
+                this.__void = false;
+                if (this.__torn) {
+                    gsap.to(tabRef.current, {
+                        ...DROP_PROPS,
+                        onComplete: () => {
+                            setTorn(true);
+                            if (onTearComplete) onTearComplete();
+                        },
+                    });
+                } else {
+                    gsap.to([handleRef.current, backingRef.current, shadowRef.current], { x: 0, duration: 0.5 });
+                    gsap.to(tabRef.current, { clipPath: `inset(-100% -100% -100% 0px)`, duration: 0.5 });
+                    gsap.set(proxyRef.current, { x: 0, y: 0 });
+                }
+            },
+        });
 
-  return (
-    <div ref={stripRef} className="tear-strip">
-      <div className="tear-strip__content">
-        <p>{children}</p>
-      </div>
-      <span ref={shadowRef} className="tear-strip__shadow"></span>
-      {!torn && (
-        <>
-          <div ref={tabRef} className="tear-strip__strip shadow-sm">
-            <svg ref={iconRef} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
-            </svg>
-            <div ref={backingRef} className="tear-strip__back">
-              <div className="tear-strip__back-shadow"></div>
-              <div className="tear-strip__backing"></div>
+        return () => {
+            if (draggableRef.current && draggableRef.current[0]) draggableRef.current[0].kill();
+        };
+    }, [gsapLoaded]);
+
+    return (
+        <div ref={stripRef} className="tear-strip">
+            <div className="tear-strip__content">
+                <p>{children}</p>
             </div>
-            <span className="strip-text">Tear to Delete</span>
-          </div>
-          <div ref={handleRef} className="tear-strip__handle" title="Drag to tear"></div>
-        </>
-      )}
-    </div>
-  )
+            <span ref={shadowRef} className="tear-strip__shadow"></span>
+            {!torn && (
+                <>
+                    <div ref={tabRef} className="tear-strip__strip shadow-sm">
+                        <svg ref={iconRef} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
+                        </svg>
+                        <div ref={backingRef} className="tear-strip__back">
+                            <div className="tear-strip__back-shadow"></div>
+                            <div className="tear-strip__backing"></div>
+                        </div>
+                        <span className="strip-text">Tear to Delete</span>
+                    </div>
+                    <div ref={handleRef} className="tear-strip__handle" title="Drag to tear"></div>
+                </>
+            )}
+        </div>
+    )
 }
 
 // --- Sticky Note Container ---
@@ -394,7 +377,6 @@ const StickyNoteWrapper = ({ onRemove }) => {
 
     const handleTearComplete = () => {
         if (containerRef.current && window.gsap) {
-            // Animate the rest of the note falling after the strip is gone
             window.gsap.to(containerRef.current, {
                 y: 500,
                 rotate: 10,
@@ -409,14 +391,15 @@ const StickyNoteWrapper = ({ onRemove }) => {
         }
     };
 
+    // FIX: Removed 'overflow-hidden' from here and applied rounded-b to the content only
     return (
-        <div ref={containerRef} className="w-full h-full flex flex-col bg-yellow-200 rounded-[2rem] shadow-xl overflow-hidden">
+        <div ref={containerRef} className="w-full h-full flex flex-col bg-white rounded-[2rem] shadow-xl relative z-10">
             <TearStrip onTearComplete={handleTearComplete}>
                 Deleted!
             </TearStrip>
-            
-            <div className="flex-1 p-6 pt-2 bg-yellow-200 relative">
-                <textarea 
+
+            <div className="flex-1 p-6 pt-2 bg-white relative rounded-b-[2rem]">
+                <textarea
                     className="w-full h-full bg-transparent resize-none outline-none text-gray-800 font-medium placeholder:text-yellow-700/50 text-lg leading-relaxed"
                     placeholder="Write a note..."
                     defaultValue="Meeting at 2 PM..."
@@ -435,22 +418,22 @@ const WidgetCard = ({ widget, isGhost = false, isValid = true, style, onRemove }
 
     let ghostStyles = 'bg-white/20 border-white/30';
     if (isGhost) {
-        ghostStyles = isValid 
+        ghostStyles = isValid
             ? 'bg-green-500/20 border-green-400/50'
             : 'bg-red-500/20 border-red-400/50';
     }
 
     const isSticky = widget.type === 'sticky';
-    const contentClasses = isSticky 
-        ? 'w-full h-full' 
+    const contentClasses = isSticky
+        ? 'w-full h-full'
         : 'w-full h-full bg-black/40 backdrop-blur-xl border border-white/10 shadow-2xl overflow-hidden rounded-[2rem] text-white flex flex-col hover:border-white/20';
 
     const baseClasses = `
     absolute transition-all duration-200 ease-out select-none
-    ${isGhost 
-        ? `${ghostStyles} border-2 border-dashed z-0 rounded-[2rem]` 
-        : 'z-10' 
-    }
+    ${isGhost
+            ? `${ghostStyles} border-2 border-dashed z-0 rounded-[2rem]`
+            : 'z-10'
+        }
   `;
 
     if (isGhost) {
@@ -560,9 +543,9 @@ const WidgetCard = ({ widget, isGhost = false, isValid = true, style, onRemove }
             style={{ ...style, width: w, height: h }}
             className={`${baseClasses} rounded-[2rem] active:scale-[1.02] active:shadow-3xl active:z-50`}
         >
-             <div className={`${contentClasses} ${!isSticky ? 'cursor-grab active:cursor-grabbing' : ''}`}>
+            <div className={`${contentClasses} ${!isSticky ? 'cursor-grab active:cursor-grabbing' : ''}`}>
                 {renderContent()}
-             </div>
+            </div>
         </div>
     );
 };
@@ -616,13 +599,13 @@ export default function Grid() {
 
     const isOverlapping = (id, col, row, colSpan, rowSpan) => {
         for (const w of widgets) {
-            if (w.id === id) continue; 
+            if (w.id === id) continue;
             const { colSpan: wColSpan, rowSpan: wRowSpan } = getWidgetConfig(w.size);
             const isIntersecting = !(
-                col + colSpan <= w.col ||    
-                col >= w.col + wColSpan ||   
-                row + rowSpan <= w.row ||     
-                row >= w.row + wRowSpan       
+                col + colSpan <= w.col ||
+                col >= w.col + wColSpan ||
+                row + rowSpan <= w.row ||
+                row >= w.row + wRowSpan
             );
             if (isIntersecting) return true;
         }
@@ -633,13 +616,13 @@ export default function Grid() {
         if (col < 0 || row < 0) return true;
         const maxCols = Math.floor((containerSize.width - GAP) / (GRID_SIZE + GAP));
         const maxRows = Math.floor((containerSize.height - GAP) / (GRID_SIZE + GAP));
-        return (col + colSpan > maxCols) || (row + rowSpan > maxRows); 
+        return (col + colSpan > maxCols) || (row + rowSpan > maxRows);
     };
 
     const handleMouseDown = (e, id, currentX, currentY) => {
         // Prevent moving widget if clicking inside the tear strip handle or sticky note textarea
         if (e.target.closest('.tear-strip__handle') || e.target.tagName === 'TEXTAREA') return;
-        
+
         if (e.button !== 0) return;
         const rect = e.currentTarget.getBoundingClientRect();
         setDraggingId(id);
@@ -663,7 +646,7 @@ export default function Grid() {
 
         const hasOverlap = isOverlapping(draggingId, col, row, colSpan, rowSpan);
         const outOfBounds = isOutOfBounds(col, row, colSpan, rowSpan);
-        
+
         const isValid = !hasOverlap && !outOfBounds;
 
         if (isValid) {
@@ -673,7 +656,7 @@ export default function Grid() {
                 }
                 return w;
             }));
-        } 
+        }
         setDraggingId(null);
     };
 
@@ -691,9 +674,9 @@ export default function Grid() {
             onMouseLeave={handleMouseUp}
         >
             <div className="absolute inset-0 bg-black/20 pointer-events-none" />
-            <TearStripStyles /> 
-            
-            <div 
+            <TearStripStyles />
+
+            <div
                 className="absolute inset-0 opacity-10 pointer-events-none"
                 style={{
                     backgroundImage: `radial-gradient(circle, #ffffff 1px, transparent 1px)`,
@@ -751,8 +734,8 @@ export default function Grid() {
                                     transition: isDragging ? 'none' : 'all 0.5s cubic-bezier(0.2, 0.8, 0.2, 1)'
                                 }}
                             >
-                                <WidgetCard 
-                                    widget={widget} 
+                                <WidgetCard
+                                    widget={widget}
                                     onRemove={removeWidget}
                                 />
                             </div>
