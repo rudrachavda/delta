@@ -46,9 +46,38 @@ const getDimensions = (size) => {
 };
 
 // --- CSS ---
-const TearStripStyles = () => (
+// FIX: Wrapped in React.memo to prevent font reloading during drag
+const TearStripStyles = React.memo(() => (
     <style dangerouslySetInnerHTML={{
         __html: `
+        /* --- Font Declarations --- */
+        @font-face {
+            font-family: 'SF Pro Rounded';
+            src: url('/fonts/SF-Pro-Rounded-Regular.otf') format('opentype');
+            font-weight: normal;
+            font-style: normal;
+        }
+        @font-face {
+            font-family: 'SF Pro';
+            src: url('/fonts/SF-Pro.ttf') format('truetype');
+            font-weight: normal;
+            font-style: normal;
+        }
+
+        /* --- Global Font Smoothing --- */
+        body {
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        /* --- Utility Classes for Fonts --- */
+        .font-rounded {
+            font-family: 'SF Pro Rounded', sans-serif !important;
+        }
+        .font-text {
+            font-family: 'SF Pro', sans-serif !important;
+        }
+
         :root {
             --bg: #fff; /* Sticky Note Yellow */
             --tab-darkness: 40;
@@ -61,22 +90,23 @@ const TearStripStyles = () => (
         }
 
         .tear-strip {
-	        font-size: 1.3rem;
-	        font-weight: bold;
-	        width: clamp(300px, 470px, 28vw);
-	        width: 344px;
-	        height: 78px;
-	        display: grid;
-	        place-items: center;
-        /*	translate: 0 -80%;*/
-	        position: relative;
-	        border: 3px dashed hsl(0 0% 81%);
-	        border-radius: 100px;
-	        background: linear-gradient(hsl(0 0% 91%), hsl(0 0% 91%)) padding-box;
-	        color: hsl(0, 0%, 70%);
+            font-family: 'SF Pro Rounded', sans-serif; /* UI Label uses Rounded */
+            font-size: 1.3rem;
+            font-weight: bold;
+            width: clamp(300px, 470px, 28vw);
+            width: 344px;
+            height: 78px;
+            display: grid;
+            place-items: center;
+        /* translate: 0 -80%;*/
+            position: relative;
+            border: 3px dashed hsl(0 0% 81%);
+            border-radius: 100px;
+            background: linear-gradient(hsl(0 0% 91%), hsl(0 0% 91%)) padding-box;
+            color: hsl(0, 0%, 70%);
             z-index: 50;
-            overflow: visible; !important
-}
+            overflow: visible !important;
+        }
 
         .tear-strip__content {
             position: absolute;
@@ -90,75 +120,75 @@ const TearStripStyles = () => (
         }
 
         .tear-strip__strip {
-	position: absolute;
-	inset: 0;
-	background: var(--bg);
-	display: flex;
-	border-radius: 100px;
-	align-items: center;
-	justify-content: center;
-	clip-path: inset(-100% 0 -100% 1px);
-	color: hsl(0, 0%, 71%);
-	font-weight: 500;
-}
+            position: absolute;
+            inset: 0;
+            background: var(--bg);
+            display: flex;
+            border-radius: 100px;
+            align-items: center;
+            justify-content: center;
+            clip-path: inset(-100% 0 -100% 1px);
+            color: hsl(0, 0%, 71%);
+            font-weight: 500;
+        }
 
         .tear-strip__shadow {
-	position: absolute;
-	height: 100%;
-	width: 20px;
-	background: linear-gradient(90deg, transparent, hsl(0 0% 10% / 0.5));
-	filter: blur(8px);
-	transform-origin: 100% 50%;
-	left: 0;
-	opacity: 0;
-    z-index: 90;
-}
+            position: absolute;
+            height: 100%;
+            width: 20px;
+            background: linear-gradient(90deg, transparent, hsl(0 0% 10% / 0.5));
+            filter: blur(8px);
+            transform-origin: 100% 50%;
+            left: 0;
+            opacity: 0;
+            z-index: 90;
+        }
 
         .tear-strip__back {
-	position: absolute;
-	height: 100%;
-	width: 100%;
-	border-radius: 100px;
-	right: 100%;
-    z-index: 80;
-}
+            position: absolute;
+            height: 100%;
+            width: 100%;
+            border-radius: 100px;
+            right: 100%;
+            z-index: 80;
+        }
 
         .tear-strip__backing {
-	background: linear-gradient(90deg, hsl(0 0% calc(var(--tab-darkness, 40) * 1%) / var(--bg-alpha, 1)), hsl(0 0% 100% / var(--bg-alpha, 1)), hsl(0 0% 80% / var(--bg-alpha, 1)));
-	background-position: 100% 50%;
-	background-repeat: no-repeat;
-	background-color: hsl(0 0% 93%);
-	background-size: calc(var(--bg-size, 0) * 1px) 100%;
-	position: absolute;
-	inset: 0;
-	border-radius: 1000px;
-}
+            background: linear-gradient(90deg, hsl(0 0% calc(var(--tab-darkness, 40) * 1%) / var(--bg-alpha, 1)), hsl(0 0% 100% / var(--bg-alpha, 1)), hsl(0 0% 80% / var(--bg-alpha, 1)));
+            background-position: 100% 50%;
+            background-repeat: no-repeat;
+            background-color: hsl(0 0% 93%);
+            background-size: calc(var(--bg-size, 0) * 1px) 100%;
+            position: absolute;
+            inset: 0;
+            border-radius: 1000px;
+        }
 
         .tear-strip__backing::before {
-	content: "";
-	position: absolute;
-	inset: 0 -8px 0 0;
-	filter: blur(4px);
-	background: radial-gradient(hsl(0 0% 10% / 0.5), transparent 80%);
-	border-radius: 1000px;
-	z-index: -1;
-	opacity: var(--shadow-reveal, 0);
-}
+            content: "";
+            position: absolute;
+            inset: 0 -8px 0 0;
+            filter: blur(4px);
+            background: radial-gradient(hsl(0 0% 10% / 0.5), transparent 80%);
+            border-radius: 1000px;
+            z-index: -1;
+            opacity: var(--shadow-reveal, 0);
+        }
 
         .tear-strip__back-shadow {
-	position: absolute;
-	border-radius: 1000px;
-	background: transparent;
-	right: 0;
-	top: 50%;
-	height: 100%;
-	translate: 0 -50%;
-	width: calc((var(--shadow-width) * var(--shadow-multiplier, 0.8)) * 1px);
-	z-index: -1;
-	min-width: 100px;
-	box-shadow:
-		0 0 calc(var(--shadow-spread, 0) * 60px) hsl(10 0% 50% / 0.35);
-}
+            position: absolute;
+            border-radius: 1000px;
+            background: transparent;
+            right: 0;
+            top: 50%;
+            height: 100%;
+            translate: 0 -50%;
+            width: calc((var(--shadow-width) * var(--shadow-multiplier, 0.8)) * 1px);
+            z-index: -1;
+            min-width: 100px;
+            box-shadow:
+                0 0 calc(var(--shadow-spread, 0) * 60px) hsl(10 0% 50% / 0.35);
+        }
 
         .tear-strip__strip svg {
             background: hsl(78, 75%, 57%);
@@ -196,11 +226,12 @@ const TearStripStyles = () => (
         .strip-text {
              pointer-events: none;
              font-size: 1rem;
-             font-weight: 500;
+             font-weight: 600;
+             letter-spacing: 0.025em;
              color: hsl(0, 0%, 71%); 
         }
     `}} />
-);
+));
 
 // --- TearStrip Component ---
 const TearStrip = ({ children, onTearComplete }) => {
@@ -249,7 +280,7 @@ const TearStrip = ({ children, onTearComplete }) => {
             type: 'x,y',
             trigger: handleRef.current,
             allowContextMenu: true,
-            dragResistance: 0.99,
+            dragResistance: 0.5,
 
             onDrag: function (event) {
                 if (this.__void) return false;
@@ -388,16 +419,15 @@ const StickyNoteWrapper = ({ onRemove }) => {
         }
     };
 
-    // FIX: Removed 'overflow-hidden' from here and applied rounded-b to the content only
     return (
-        <div ref={containerRef} className="w-full h-full flex flex-col bg-white rounded-[2rem] shadow-xl relative z-10">
+        <div ref={containerRef} className="w-full h-full flex flex-col bg-white rounded-[2rem] shadow-xl relative z-10 widget-text">
             <TearStrip onTearComplete={handleTearComplete}>
-                Deleted!
+                <span className="font-rounded">Deleted!</span>
             </TearStrip>
 
             <div className="flex-1 p-6 pt-2 bg-white relative rounded-b-[2rem]">
                 <textarea
-                    className="w-full h-full bg-transparent resize-none outline-none text-gray-800 font-medium placeholder:text-yellow-700/50 text-lg leading-relaxed"
+                    className="w-full h-full bg-transparent resize-none outline-none text-gray-800 font-medium placeholder:text-yellow-700/50 text-lg leading-relaxed font-text"
                     placeholder="Write a note..."
                     defaultValue="Meeting at 2 PM..."
                     onMouseDown={(e) => e.stopPropagation()}
@@ -423,7 +453,7 @@ const WidgetCard = ({ widget, isGhost = false, isValid = true, style, onRemove }
     const isSticky = widget.type === 'sticky';
     const contentClasses = isSticky
         ? 'w-full h-full'
-        : 'w-full h-full bg-black/40 backdrop-blur-xl border border-white/10 shadow-2xl overflow-hidden rounded-[2rem] text-white flex flex-col hover:border-white/20';
+        : 'w-full h-full bg-black/40 backdrop-blur-xl border border-white/10 shadow-2xl overflow-hidden rounded-[2rem] text-white flex flex-col hover:border-white/20 widget-text';
 
     const baseClasses = `
     absolute transition-all duration-200 ease-out select-none
@@ -446,11 +476,11 @@ const WidgetCard = ({ widget, isGhost = false, isValid = true, style, onRemove }
                     <div className="p-5 flex flex-col justify-between h-full bg-gradient-to-br from-green-500/20 to-transparent">
                         <div className="flex items-center space-x-2 text-green-400">
                             <BatteryCharging size={20} />
-                            <span className="font-semibold text-sm">Charging</span>
+                            <span className="font-semibold text-sm font-text">Charging</span>
                         </div>
                         <div className="flex flex-col items-center justify-center">
-                            <span className="text-4xl font-bold font-mono tracking-tighter">100%</span>
-                            <span className="text-xs text-white/50 mt-1">MacBook Pro</span>
+                            <span className="text-4xl font-bold tracking-tighter font-rounded">100%</span>
+                            <span className="text-xs text-white/50 mt-1 font-text">MacBook Pro</span>
                         </div>
                         <div className="w-full bg-white/10 h-1.5 rounded-full overflow-hidden">
                             <div className="bg-green-400 w-full h-full" />
@@ -461,17 +491,17 @@ const WidgetCard = ({ widget, isGhost = false, isValid = true, style, onRemove }
                 return (
                     <div className="flex h-full bg-white text-black">
                         <div className="w-1/3 bg-red-500 text-white p-4 flex flex-col items-center justify-center">
-                            <span className="text-lg font-medium uppercase">Wed</span>
-                            <span className="text-6xl font-bold tracking-tighter">3</span>
+                            <span className="text-lg font-medium uppercase font-rounded">Wed</span>
+                            <span className="text-6xl font-bold tracking-tighter font-rounded">3</span>
                         </div>
                         <div className="flex-1 p-4 flex flex-col space-y-3">
                             <div className="border-l-4 border-orange-400 pl-3 py-1">
-                                <p className="text-xs text-gray-500 font-bold uppercase">10:00 AM</p>
-                                <p className="font-semibold text-sm">Team Standup</p>
+                                <p className="text-xs text-gray-500 font-bold uppercase font-rounded">10:00 AM</p>
+                                <p className="font-semibold text-sm font-text">Team Standup</p>
                             </div>
                             <div className="border-l-4 border-blue-400 pl-3 py-1">
-                                <p className="text-xs text-gray-500 font-bold uppercase">1:00 PM</p>
-                                <p className="font-semibold text-sm">Design Review</p>
+                                <p className="text-xs text-gray-500 font-bold uppercase font-rounded">1:00 PM</p>
+                                <p className="font-semibold text-sm font-text">Design Review</p>
                             </div>
                         </div>
                     </div>
@@ -480,27 +510,27 @@ const WidgetCard = ({ widget, isGhost = false, isValid = true, style, onRemove }
                 return (
                     <div className="p-6 h-full flex items-center justify-between bg-gradient-to-br from-blue-500/30 to-blue-900/10">
                         <div className="flex flex-col">
-                            <span className="text-lg font-medium">Santa Cruz</span>
-                            <span className="text-5xl font-light">72°</span>
-                            <span className="text-sm text-blue-200 mt-1">Mostly Sunny</span>
+                            <span className="text-lg font-medium font-text">Santa Cruz</span>
+                            <span className="text-5xl font-light font-rounded">72°</span>
+                            <span className="text-sm text-blue-200 mt-1 font-text">Mostly Sunny</span>
                         </div>
                         <CloudSun size={64} className="text-yellow-400 drop-shadow-lg" />
                     </div>
                 );
             case 'reminders':
                 return (
-                    <div className="p-5 h-full flex flex-col bg-neutral-800/80">
-                        <div className="flex justify-between items-center mb-3">
-                            <div className="flex items-center space-x-2 text-orange-400">
-                                <span className="font-bold">Reminders</span>
+                    <div className="p-4 pt-3 pb-3 h-full flex flex-col bg-neutral-800/80">
+                        <div className="flex justify-between items-center mb-0">
+                            <div className="flex items-center space-x-2 text-orange-400 text-[1em]">
+                                <span className="font-bold font-rounded tracking-wide">Reminders</span>
                             </div>
-                            <span className="text-2xl font-bold">4</span>
+                            <span className="text-2xl font-bold font-rounded">4</span>
                         </div>
                         <ul className="space-y-3 mt-1">
-                            {['Call Mom', 'Buy Milk'].map((item, i) => (
+                            {['Call Mom', 'Buy Milk', 'eat food'].map((item, i) => (
                                 <li key={i} className="flex items-center space-x-3 group">
                                     <div className="w-4 h-4 rounded-full border-2 border-white/30 group-hover:border-orange-400 transition-colors" />
-                                    <span className="text-sm font-medium truncate">{item}</span>
+                                    <span className="text-sm font-medium truncate font-text">{item}</span>
                                 </li>
                             ))}
                         </ul>
@@ -515,12 +545,12 @@ const WidgetCard = ({ widget, isGhost = false, isValid = true, style, onRemove }
                         <div className="relative z-10 flex flex-col justify-between h-full">
                             <div className="flex items-center space-x-2 text-zinc-400">
                                 <Zap size={16} className="fill-yellow-400 text-yellow-400" />
-                                <span className="text-xs font-bold tracking-wider uppercase">Tesla Model 3</span>
+                                <span className="text-xs font-bold tracking-wider uppercase font-rounded">Tesla Model 3</span>
                             </div>
                             <div className="flex justify-between items-end">
                                 <div>
-                                    <div className="text-3xl font-bold text-white">240<span className="text-base text-zinc-500 font-normal ml-1">mi</span></div>
-                                    <div className="text-xs text-green-400 mt-1">Connected</div>
+                                    <div className="text-3xl font-bold text-white font-rounded">240<span className="text-base text-zinc-500 font-normal ml-1 font-text">mi</span></div>
+                                    <div className="text-xs text-green-400 mt-1 font-text">Connected</div>
                                 </div>
                                 <div className="flex space-x-4">
                                     <button className="p-3 bg-zinc-800 rounded-full hover:bg-zinc-700 transition-colors">
@@ -741,7 +771,7 @@ export default function Grid() {
                 })}
             </div>
 
-            <div className="absolute bottom-8 left-1/2 -translate-x-1/2 bg-black/60 backdrop-blur-md px-6 py-3 rounded-full border border-white/10 text-sm font-medium text-white/80 shadow-xl pointer-events-none">
+            <div className="absolute bottom-8 left-1/2 -translate-x-1/2 bg-black/60 backdrop-blur-md px-6 py-3 rounded-full border border-white/10 text-sm font-medium text-white/80 shadow-xl pointer-events-none font-text">
                 {draggingId ? "Release to snap" : "Drag widgets to organize"}
             </div>
         </div>
