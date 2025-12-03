@@ -1,5 +1,5 @@
-import Portfolio from './Portfolio';
+import Grid from './grid';
 
 export default function Home() {
-  return <Portfolio />;
+  return <Grid />;
 }
