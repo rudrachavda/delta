@@ -2,9 +2,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
     Calendar,
-    Battery,
     CloudSun,
-    CheckSquare,
     BatteryCharging,
     Zap,
     Car,
@@ -12,10 +10,24 @@ import {
 } from 'lucide-react';
 
 // --- Constants & Config ---
-const GRID_SIZE = 160; // Base unit size in pixels
-const GAP = 24;        // Gap between widgets
+const GRID_SIZE = 160; 
+const GAP = 24;        
 
-// Helper to calculate dimensions (Col/Row spans)
+// --- Helper Functions ---
+const loadScript = (src) => {
+    return new Promise((resolve, reject) => {
+        if (document.querySelector(`script[src="${src}"]`)) {
+            resolve();
+            return;
+        }
+        const script = document.createElement('script');
+        script.src = src;
+        script.onload = resolve;
+        script.onerror = reject;
+        document.body.appendChild(script);
+    });
+};
+
 const getWidgetConfig = (size) => {
     switch (size) {
         case 'small': return { colSpan: 1, rowSpan: 1 };
@@ -25,7 +37,6 @@ const getWidgetConfig = (size) => {
     }
 };
 
-// Helper to get pixel dimensions from spans
 const getDimensions = (size) => {
     const { colSpan, rowSpan } = getWidgetConfig(size);
     return {
@@ -34,44 +45,422 @@ const getDimensions = (size) => {
     };
 };
 
-// --- Mock Data ---
-// We now store col/row instead of raw X/Y for easier collision math, 
-// but we'll calculate X/Y on the fly for rendering.
-const INITIAL_WIDGETS = [
-    { id: '1', type: 'battery', size: 'small', col: 0, row: 0 },
-    { id: '2', type: 'weather', size: 'medium', col: 2, row: 0 },
-    { id: '3', type: 'calendar', size: 'large', col: 0, row: 2 },
-    { id: '4', type: 'reminders', size: 'small', col: 4, row: 0 },
-    { id: '5', type: 'car', size: 'medium', col: 4, row: 2 },
-];
+// --- CSS from Your Provided "Tear Strip" Code ---
+const TearStripStyles = () => (
+    <style dangerouslySetInnerHTML={{__html: `
+        :root {
+            --bg: #fef08a; /* Matched to Sticky Note Yellow-200 */
+            --tab-darkness: 40;
+            --bg-alpha: 1;
+            --shadow-reveal: 0;
+            --shadow-width: 0;
+            --shadow-multiplier: 0.8;
+            --shadow-spread: 0;
+            --bg-size: 0;
+        }
 
-const WidgetCard = ({ widget, isGhost = false, isValid = true, style }) => {
+        .tear-strip {
+            font-size: 1rem;
+            font-weight: bold;
+            width: 100%; /* Adapted to fit widget width */
+            height: 70px;
+            display: grid;
+            place-items: center;
+            position: relative;
+            border-bottom: 2px dashed hsl(0 0% 81%); /* Changed to bottom border to merge with note */
+            border-radius: 2rem 2rem 0 0; /* Match widget rounded corners */
+            background: linear-gradient(hsl(0 0% 91%), hsl(0 0% 91%)) padding-box;
+            color: hsl(0, 0%, 70%);
+            z-index: 20;
+        }
+
+        .tear-strip__content {
+            position: absolute;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: #854d0e;
+            pointer-events: none;
+            right: 2rem;
+        }
+
+        .tear-strip__strip {
+            position: absolute;
+            inset: 0;
+            background: var(--bg);
+            display: flex;
+            border-radius: 2rem 2rem 0 0; /* Match widget rounded corners */
+            align-items: center;
+            justify-content: center;
+            clip-path: inset(-100% 0 -100% 1px);
+            color: hsl(0, 0%, 71%);
+            font-weight: 500;
+        }
+
+        .tear-strip__shadow {
+            position: absolute;
+            height: 100%;
+            width: 20px;
+            background: linear-gradient(90deg, transparent, hsl(0 0% 10% / 0.5));
+            filter: blur(8px);
+            transform-origin: 100% 50%;
+            left: 0;
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .tear-strip__back {
+            position: absolute;
+            height: 100%;
+            width: 100%;
+            border-radius: 2rem 2rem 0 0;
+            right: 100%;
+            pointer-events: none;
+        }
+
+        .tear-strip__backing {
+            background: linear-gradient(90deg, hsl(0 0% calc(var(--tab-darkness, 40) * 1%) / var(--bg-alpha, 1)), hsl(0 0% 100% / var(--bg-alpha, 1)), hsl(0 0% 80% / var(--bg-alpha, 1)));
+            background-position: 100% 50%;
+            background-repeat: no-repeat;
+            background-color: hsl(0 0% 93%);
+            background-size: calc(var(--bg-size, 0) * 1px) 100%;
+            position: absolute;
+            inset: 0;
+            border-radius: 2rem 2rem 0 0;
+        }
+
+        .tear-strip__backing::before {
+            content: "";
+            position: absolute;
+            inset: 0 -8px 0 0;
+            filter: blur(4px);
+            background: radial-gradient(hsl(0 0% 10% / 0.5), transparent 80%);
+            border-radius: 1000px;
+            z-index: -1;
+            opacity: var(--shadow-reveal, 0);
+        }
+
+        .tear-strip__back-shadow {
+            position: absolute;
+            border-radius: 1000px;
+            background: transparent;
+            right: 0;
+            top: 50%;
+            height: 100%;
+            translate: 0 -50%;
+            width: calc((var(--shadow-width) * var(--shadow-multiplier, 0.8)) * 1px);
+            z-index: -1;
+            min-width: 100px;
+            box-shadow: 0 0 calc(var(--shadow-spread, 0) * 60px) hsl(10 0% 50% / 0.35);
+        }
+
+        .tear-strip__strip svg {
+            background: hsl(78, 75%, 57%);
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            padding: 8px;
+            position: absolute;
+            left: 11px;
+            color: white;
+            stroke-width: 2.5px;
+            transform-origin: 100% 50%;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .tear-strip__handle {
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            aspect-ratio: 1;
+            background: hsl(280 0% 75% / var(--alpha, 0));
+            border-radius: 50%;
+            scale: 1.35;
+            transition: background 0.2s;
+            cursor: grab;
+            z-index: 50;
+        }
+        .tear-strip__handle:active {
+            cursor: grabbing;
+        }
+
+        .tear-strip__handle:hover:not(:active) {
+            --alpha: 0.25;
+        }
+
+        .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border-width: 0;
+        }
+        
+        .strip-text {
+             margin-left: 2.5rem;
+             pointer-events: none;
+             font-size: 0.8rem;
+             text-transform: uppercase;
+             letter-spacing: 0.05em;
+             color: #854d0e; 
+        }
+    `}} />
+);
+
+// --- The Updated TearStrip Component ---
+const TearStrip = ({ children, onTearComplete }) => {
+  const stripRef = useRef(null)
+  const tabRef = useRef(null)
+  const backingRef = useRef(null)
+  const handleRef = useRef(null)
+  const iconRef = useRef(null)
+  const draggableRef = useRef(null)
+  const shadowRef = useRef(null)
+  const proxyRef = useRef(null)
+  const [torn, setTorn] = useState(false)
+  const [gsapLoaded, setGsapLoaded] = useState(false);
+
+  // Load GSAP
+  useEffect(() => {
+    const loadDependencies = async () => {
+        try {
+            if (!window.gsap) await loadScript('https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js');
+            if (!window.Draggable) await loadScript('https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/Draggable.min.js');
+            window.gsap.registerPlugin(window.Draggable);
+            setGsapLoaded(true);
+        } catch (e) {
+            console.error("GSAP load failed", e);
+        }
+    };
+    loadDependencies();
+  }, []);
+
+  useEffect(() => {
+    if (!gsapLoaded || !stripRef.current) return;
+    if (!proxyRef.current) proxyRef.current = document.createElement('div');
+
+    const gsap = window.gsap;
+    const Draggable = window.Draggable;
+    const DISTANCE_OF_RESISTANCE = stripRef.current.offsetWidth * 0.25;
+    const DROP_PROPS = {
+        yPercent: 1000,
+        rotate: -20,
+        opacity: 0,
+        duration: 0.65,
+    };
+
+    gsap.set(handleRef.current, { x: 0, y: 0 });
+
+    draggableRef.current = Draggable.create(proxyRef.current, {
+      type: 'x,y',
+      trigger: handleRef.current,
+      allowContextMenu: true,
+      dragResistance: 0.99,
+      
+      onDrag: function (event) {
+        if (this.__void) return false;
+
+        // If torn, drag the strip element (visual only)
+        if (this.__torn) {
+          return gsap.to(tabRef.current, {
+            x: this.x - stripRef.current.offsetWidth * 2,
+            y: this.y,
+            duration: 0.1,
+          });
+        }
+
+        const HANDLE_HEIGHT = handleRef.current.offsetHeight;
+        if (this.y < this.startY - HANDLE_HEIGHT * 0.5 || this.y > this.startY + HANDLE_HEIGHT * 0.5) {
+          return (this.__void = true);
+        }
+
+        // --- Physics: Drag Resistance ---
+        if (this.x > this.startX) {
+          this.dragResistance = gsap.utils.clamp(
+            0,
+            this.dragResistance,
+            gsap.utils.mapRange(0, DISTANCE_OF_RESISTANCE, 0.99, 0, this.x)
+          );
+        }
+
+        if (!this.__torn) {
+          const clip = gsap.utils.mapRange(0, stripRef.current.offsetWidth * 2, 0, stripRef.current.offsetWidth, this.x);
+          gsap.set(tabRef.current, { clipPath: `inset(-100% -1000% -100% ${clip}px)` });
+        }
+
+        // Set custom props
+        gsap.set(stripRef.current, {
+          '--tab-darkness': gsap.utils.clamp(10, 80, gsap.utils.mapRange(0, stripRef.current.offsetWidth, 10, 80, this.x)),
+          '--shadow-spread': gsap.utils.clamp(0, 1, gsap.utils.mapRange(stripRef.current.offsetWidth * 0.25, stripRef.current.offsetWidth, 0, 1, this.x)),
+          '--shadow-reveal': gsap.utils.clamp(0, 1, gsap.utils.mapRange(stripRef.current.offsetWidth * 0.1, stripRef.current.offsetWidth * 0.2, 0, 1, this.x)),
+          '--shadow-width': this.x * 0.5,
+          '--bg-size': this.x * 0.5,
+          '--shadow-multiplier': gsap.utils.clamp(0.8, 0.9, gsap.utils.mapRange(stripRef.current.offsetWidth, stripRef.current.offsetWidth * 2, 0.8, 0.9, this.x)),
+        });
+
+        // Icon movement
+        gsap.set(iconRef.current, {
+          scaleX: gsap.utils.clamp(0.75, 1, gsap.utils.mapRange(0, DISTANCE_OF_RESISTANCE, 1, 0.75, this.x)),
+          xPercent: gsap.utils.clamp(0, 50, gsap.utils.mapRange(0, DISTANCE_OF_RESISTANCE, 0, 50, this.x)),
+        });
+
+        // Backing movement
+        gsap.set(backingRef.current, { transformOrigin: '0% 50%', x: this.x });
+
+        gsap.set(shadowRef.current, {
+          x: this.x * 0.5,
+          xPercent: -90,
+          scaleX: gsap.utils.clamp(1, 2, gsap.utils.mapRange(stripRef.current.offsetWidth, stripRef.current.offsetWidth * 2, 1, 2, this.x)),
+          opacity: this.x > stripRef.current.offsetWidth
+              ? gsap.utils.clamp(0, 1, gsap.utils.mapRange(stripRef.current.offsetWidth, stripRef.current.offsetWidth * 2, 1, 0, this.x))
+              : gsap.utils.clamp(0, 1, gsap.utils.mapRange(15, 100, 0, 1, this.x)),
+        });
+
+        // Handle position
+        const x = this.__torn ? this.x : gsap.utils.clamp(0, stripRef.current.offsetWidth, this.x);
+        gsap.set(handleRef.current, { x });
+
+        // Backing scale (Depth perception)
+        if (this.x < stripRef.current.offsetWidth) {
+            gsap.set(backingRef.current, { scaleX: gsap.utils.clamp(0.9, 1, gsap.utils.mapRange(0, DISTANCE_OF_RESISTANCE * 2, 1, 0.9, this.x)) });
+        } else {
+            gsap.set(backingRef.current, { scaleX: gsap.utils.clamp(0.9, 1, gsap.utils.mapRange(stripRef.current.offsetWidth * 2 - DISTANCE_OF_RESISTANCE * 2, stripRef.current.offsetWidth * 2, 0.9, 1, this.x)) });
+        }
+
+        // Tear Trigger
+        if (this.x > stripRef.current.offsetWidth * 1.99) {
+          this.__torn = true;
+          gsap.to(backingRef.current, { xPercent: 25, ease: 'elastic.out(1, 0.9)', '--bg-alpha': 0.75 });
+        }
+      },
+
+      onRelease: function (event) {
+        this.__void = false;
+        if (this.__torn) {
+          gsap.to(tabRef.current, {
+            ...DROP_PROPS,
+            onComplete: () => {
+              setTorn(true);
+              if(onTearComplete) onTearComplete();
+            },
+          });
+        } else {
+            // Reset animation if released before tear
+            gsap.to([handleRef.current, backingRef.current, shadowRef.current], { x: 0, duration: 0.5 });
+            gsap.to(tabRef.current, { clipPath: `inset(-100% -100% -100% 0px)`, duration: 0.5 });
+            gsap.set(proxyRef.current, { x: 0, y: 0 });
+        }
+      },
+    });
+
+    return () => {
+        if (draggableRef.current && draggableRef.current[0]) draggableRef.current[0].kill();
+    };
+  }, [gsapLoaded]);
+
+  return (
+    <div ref={stripRef} className="tear-strip">
+      <div className="tear-strip__content">
+        <p>{children}</p>
+      </div>
+      <span ref={shadowRef} className="tear-strip__shadow"></span>
+      {!torn && (
+        <>
+          <div ref={tabRef} className="tear-strip__strip shadow-sm">
+            <svg ref={iconRef} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
+            </svg>
+            <div ref={backingRef} className="tear-strip__back">
+              <div className="tear-strip__back-shadow"></div>
+              <div className="tear-strip__backing"></div>
+            </div>
+            <span className="strip-text">Tear to Delete</span>
+          </div>
+          <div ref={handleRef} className="tear-strip__handle" title="Drag to tear"></div>
+        </>
+      )}
+    </div>
+  )
+}
+
+// --- Sticky Note Container ---
+const StickyNoteWrapper = ({ onRemove }) => {
+    const containerRef = useRef(null);
+
+    const handleTearComplete = () => {
+        if (containerRef.current && window.gsap) {
+            // Animate the rest of the note falling after the strip is gone
+            window.gsap.to(containerRef.current, {
+                y: 500,
+                rotate: 10,
+                opacity: 0,
+                duration: 0.5,
+                delay: 0.1,
+                ease: "power2.in",
+                onComplete: onRemove
+            });
+        } else {
+            onRemove();
+        }
+    };
+
+    return (
+        <div ref={containerRef} className="w-full h-full flex flex-col bg-yellow-200 rounded-[2rem] shadow-xl overflow-hidden">
+            <TearStrip onTearComplete={handleTearComplete}>
+                Deleted!
+            </TearStrip>
+            
+            <div className="flex-1 p-6 pt-2 bg-yellow-200 relative">
+                <textarea 
+                    className="w-full h-full bg-transparent resize-none outline-none text-gray-800 font-medium placeholder:text-yellow-700/50 text-lg leading-relaxed"
+                    placeholder="Write a note..."
+                    defaultValue="Meeting at 2 PM..."
+                    onMouseDown={(e) => e.stopPropagation()}
+                />
+            </div>
+        </div>
+    );
+};
+
+
+// --- Main Grid Component ---
+
+const WidgetCard = ({ widget, isGhost = false, isValid = true, style, onRemove }) => {
     const { w, h } = getDimensions(widget.size);
 
-    // Dynamic styles for the ghost based on validity
     let ghostStyles = 'bg-white/20 border-white/30';
     if (isGhost) {
         ghostStyles = isValid 
-            ? 'bg-green-500/20 border-green-400/50' // Valid spot
-            : 'bg-red-500/20 border-red-400/50';    // Invalid spot
+            ? 'bg-green-500/20 border-green-400/50'
+            : 'bg-red-500/20 border-red-400/50';
     }
 
+    const isSticky = widget.type === 'sticky';
+    const contentClasses = isSticky 
+        ? 'w-full h-full' 
+        : 'w-full h-full bg-black/40 backdrop-blur-xl border border-white/10 shadow-2xl overflow-hidden rounded-[2rem] text-white flex flex-col hover:border-white/20';
+
     const baseClasses = `
-    absolute transition-all duration-200 ease-out select-none overflow-hidden
+    absolute transition-all duration-200 ease-out select-none
     ${isGhost 
-        ? `${ghostStyles} border-2 border-dashed z-0` 
-        : 'bg-black/40 backdrop-blur-xl border border-white/10 shadow-2xl z-10 hover:border-white/20'
+        ? `${ghostStyles} border-2 border-dashed z-0 rounded-[2rem]` 
+        : 'z-10' 
     }
-    rounded-[2rem] text-white flex flex-col
   `;
 
     if (isGhost) {
-        return <div style={{ ...style, width: w, height: h }} className={baseClasses} />;
+        return <div style={{ ...style, width: w, height: h }} className={`${baseClasses} rounded-[2rem]`} />;
     }
 
-    // --- Widget Content Renderers ---
     const renderContent = () => {
         switch (widget.type) {
+            case 'sticky':
+                return <StickyNoteWrapper onRemove={() => onRemove(widget.id)} />;
             case 'battery':
                 return (
                     <div className="p-5 flex flex-col justify-between h-full bg-gradient-to-br from-green-500/20 to-transparent">
@@ -104,10 +493,6 @@ const WidgetCard = ({ widget, isGhost = false, isValid = true, style }) => {
                                 <p className="text-xs text-gray-500 font-bold uppercase">1:00 PM</p>
                                 <p className="font-semibold text-sm">Design Review</p>
                             </div>
-                            <div className="border-l-4 border-gray-300 pl-3 py-1 opacity-50">
-                                <p className="text-xs text-gray-500 font-bold uppercase">4:00 PM</p>
-                                <p className="font-semibold text-sm">Gym</p>
-                            </div>
                         </div>
                     </div>
                 );
@@ -127,20 +512,17 @@ const WidgetCard = ({ widget, isGhost = false, isValid = true, style }) => {
                     <div className="p-5 h-full flex flex-col bg-neutral-800/80">
                         <div className="flex justify-between items-center mb-3">
                             <div className="flex items-center space-x-2 text-orange-400">
-                                <CheckSquare size={20} className="fill-current text-neutral-800" />
                                 <span className="font-bold">Reminders</span>
                             </div>
                             <span className="text-2xl font-bold">4</span>
                         </div>
                         <ul className="space-y-3 mt-1">
-                            <li className="flex items-center space-x-3 group">
-                                <div className="w-4 h-4 rounded-full border-2 border-white/30 group-hover:border-orange-400 transition-colors" />
-                                <span className="text-sm font-medium truncate">Call Mom</span>
-                            </li>
-                            <li className="flex items-center space-x-3 group">
-                                <div className="w-4 h-4 rounded-full border-2 border-white/30 group-hover:border-orange-400 transition-colors" />
-                                <span className="text-sm font-medium truncate">Buy Milk</span>
-                            </li>
+                            {['Call Mom', 'Buy Milk'].map((item, i) => (
+                                <li key={i} className="flex items-center space-x-3 group">
+                                    <div className="w-4 h-4 rounded-full border-2 border-white/30 group-hover:border-orange-400 transition-colors" />
+                                    <span className="text-sm font-medium truncate">{item}</span>
+                                </li>
+                            ))}
                         </ul>
                     </div>
                 );
@@ -155,7 +537,6 @@ const WidgetCard = ({ widget, isGhost = false, isValid = true, style }) => {
                                 <Zap size={16} className="fill-yellow-400 text-yellow-400" />
                                 <span className="text-xs font-bold tracking-wider uppercase">Tesla Model 3</span>
                             </div>
-
                             <div className="flex justify-between items-end">
                                 <div>
                                     <div className="text-3xl font-bold text-white">240<span className="text-base text-zinc-500 font-normal ml-1">mi</span></div>
@@ -165,33 +546,36 @@ const WidgetCard = ({ widget, isGhost = false, isValid = true, style }) => {
                                     <button className="p-3 bg-zinc-800 rounded-full hover:bg-zinc-700 transition-colors">
                                         <Wind size={18} />
                                     </button>
-                                    <button className="p-3 bg-zinc-800 rounded-full hover:bg-zinc-700 transition-colors">
-                                        <Zap size={18} />
-                                    </button>
                                 </div>
                             </div>
                         </div>
                     </div>
                 );
-            default:
-                return <div className="p-4">Unknown Widget</div>;
+            default: return <div className="p-4">Unknown</div>;
         }
     };
 
     return (
         <div
-            style={{
-                ...style,
-                width: w,
-                height: h,
-                cursor: 'grab',
-            }}
-            className={`${baseClasses} active:cursor-grabbing active:scale-[1.02] active:shadow-3xl active:z-50`}
+            style={{ ...style, width: w, height: h }}
+            className={`${baseClasses} rounded-[2rem] active:scale-[1.02] active:shadow-3xl active:z-50`}
         >
-            {renderContent()}
+             <div className={`${contentClasses} ${!isSticky ? 'cursor-grab active:cursor-grabbing' : ''}`}>
+                {renderContent()}
+             </div>
         </div>
     );
 };
+
+const INITIAL_WIDGETS = [
+    { id: '1', type: 'battery', size: 'small', col: 0, row: 0 },
+    { id: '2', type: 'weather', size: 'medium', col: 2, row: 0 },
+    { id: '3', type: 'calendar', size: 'large', col: 0, row: 2 },
+    { id: '4', type: 'reminders', size: 'small', col: 4, row: 0 },
+    { id: '5', type: 'car', size: 'medium', col: 4, row: 2 },
+    // Sticky Note
+    { id: '6', type: 'sticky', size: 'medium', col: 2, row: 1 },
+];
 
 export default function Grid() {
     const [widgets, setWidgets] = useState(INITIAL_WIDGETS);
@@ -201,7 +585,6 @@ export default function Grid() {
     const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
     const containerRef = useRef(null);
 
-    // Update container size on mount/resize
     useEffect(() => {
         const updateSize = () => {
             if (containerRef.current) {
@@ -216,52 +599,47 @@ export default function Grid() {
         return () => window.removeEventListener('resize', updateSize);
     }, []);
 
-    // --- Geometry Helpers ---
+    const removeWidget = (id) => {
+        setWidgets(prev => prev.filter(w => w.id !== id));
+    };
 
     const getPixelPosition = (col, row) => ({
         x: GAP + col * (GRID_SIZE + GAP),
         y: GAP + row * (GRID_SIZE + GAP)
     });
 
-    // Convert pixel coordinate to nearest Grid Column/Row
     const getGridPosition = (x, y) => {
         const col = Math.round((x - GAP) / (GRID_SIZE + GAP));
         const row = Math.round((y - GAP) / (GRID_SIZE + GAP));
         return { col, row };
     };
 
-    // Check if a widget at (col, row) with (colSpan, rowSpan) overlaps any OTHER widget
     const isOverlapping = (id, col, row, colSpan, rowSpan) => {
         for (const w of widgets) {
-            if (w.id === id) continue; // Skip self
-
+            if (w.id === id) continue; 
             const { colSpan: wColSpan, rowSpan: wRowSpan } = getWidgetConfig(w.size);
-            
-            // Check intersection
             const isIntersecting = !(
-                col + colSpan <= w.col ||     // Left of w
-                col >= w.col + wColSpan ||    // Right of w
-                row + rowSpan <= w.row ||     // Above w
-                row >= w.row + wRowSpan       // Below w
+                col + colSpan <= w.col ||    
+                col >= w.col + wColSpan ||   
+                row + rowSpan <= w.row ||     
+                row >= w.row + wRowSpan       
             );
-
             if (isIntersecting) return true;
         }
         return false;
     };
 
-    // Check if widget is within the container bounds
     const isOutOfBounds = (col, row, colSpan, rowSpan) => {
         if (col < 0 || row < 0) return true;
-        
-        // Calculate max cols/rows based on current container size
         const maxCols = Math.floor((containerSize.width - GAP) / (GRID_SIZE + GAP));
         const maxRows = Math.floor((containerSize.height - GAP) / (GRID_SIZE + GAP));
-        
         return (col + colSpan > maxCols) || (row + rowSpan > maxRows); 
     };
 
     const handleMouseDown = (e, id, currentX, currentY) => {
+        // Prevent moving widget if clicking inside the tear strip handle or sticky note textarea
+        if (e.target.closest('.tear-strip__handle') || e.target.tagName === 'TEXTAREA') return;
+        
         if (e.button !== 0) return;
         const rect = e.currentTarget.getBoundingClientRect();
         setDraggingId(id);
@@ -279,15 +657,10 @@ export default function Grid() {
 
     const handleMouseUp = () => {
         if (!draggingId) return;
-
-        // Calculate potential snap position
         const { col, row } = getGridPosition(mousePos.x, mousePos.y);
-        
-        // Get size of dragging widget
         const widget = widgets.find(w => w.id === draggingId);
         const { colSpan, rowSpan } = getWidgetConfig(widget.size);
 
-        // Validate Move
         const hasOverlap = isOverlapping(draggingId, col, row, colSpan, rowSpan);
         const outOfBounds = isOutOfBounds(col, row, colSpan, rowSpan);
         
@@ -300,32 +673,26 @@ export default function Grid() {
                 }
                 return w;
             }));
-        } else {
-            // Optional: You could show a "shake" animation here
-            // For now, it just snaps back to original position (handled by state reset below)
-        }
-
+        } 
         setDraggingId(null);
-    };
-
-    const bgStyle = {
-        backgroundImage: `url('https://images.unsplash.com/photo-1477346611705-65d1883cee1e?q=80&w=2070&auto=format&fit=crop')`,
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
     };
 
     return (
         <div
             ref={containerRef}
             className="w-full h-screen overflow-hidden bg-gray-900 text-white relative select-none"
-            style={bgStyle}
+            style={{
+                backgroundImage: `url('https://images.unsplash.com/photo-1477346611705-65d1883cee1e?q=80&w=2070&auto=format&fit=crop')`,
+                backgroundSize: 'cover',
+                backgroundPosition: 'center',
+            }}
             onMouseMove={handleMouseMove}
             onMouseUp={handleMouseUp}
             onMouseLeave={handleMouseUp}
         >
             <div className="absolute inset-0 bg-black/20 pointer-events-none" />
+            <TearStripStyles /> 
             
-            {/* Debug Grid (Optional) */}
             <div 
                 className="absolute inset-0 opacity-10 pointer-events-none"
                 style={{
@@ -338,10 +705,6 @@ export default function Grid() {
             <div className="relative w-full h-full p-6">
                 {widgets.map(widget => {
                     const isDragging = draggingId === widget.id;
-                    
-                    // Logic for position:
-                    // If dragging, follow mouse. 
-                    // If idle, use the Grid Col/Row converted to Pixels.
                     let x, y;
                     if (isDragging) {
                         x = mousePos.x;
@@ -352,13 +715,11 @@ export default function Grid() {
                         y = pos.y;
                     }
 
-                    // Ghost Calculation
                     let ghostEl = null;
                     if (isDragging) {
                         const { col, row } = getGridPosition(mousePos.x, mousePos.y);
                         const ghostPos = getPixelPosition(col, row);
                         const { colSpan, rowSpan } = getWidgetConfig(widget.size);
-                        
                         const hasOverlap = isOverlapping(widget.id, col, row, colSpan, rowSpan);
                         const outOfBounds = isOutOfBounds(col, row, colSpan, rowSpan);
                         const isValid = !hasOverlap && !outOfBounds;
@@ -390,7 +751,10 @@ export default function Grid() {
                                     transition: isDragging ? 'none' : 'all 0.5s cubic-bezier(0.2, 0.8, 0.2, 1)'
                                 }}
                             >
-                                <WidgetCard widget={widget} />
+                                <WidgetCard 
+                                    widget={widget} 
+                                    onRemove={removeWidget}
+                                />
                             </div>
                         </React.Fragment>
                     );

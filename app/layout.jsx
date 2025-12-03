@@ -15,8 +15,8 @@ const space_grotesk = Space_Grotesk({
 });
 
 export const metadata = {
-  title: "Rudra",
-  description: "my portfolio.",
+  title: "Delta",
+  description: "Ideas",
   icons: {
     icon: "/favicon2.svg",
   },
