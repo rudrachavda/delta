@@ -23,6 +23,21 @@ import {
 const GRID_SIZE = 160;
 const GAP = 24;
 
+// --- Dock Config ---
+const DOCK_APPS = [
+    { name: 'Notion', src: 'https://cdn.prod.website-files.com/6728a3e6f4f4161c235bc519/6728a6be92ee5ddf0080fb90_notion.png' },
+    { name: 'Asana', src: 'https://cdn.prod.website-files.com/6728a3e6f4f4161c235bc519/6728a6bef9d004f8a9cf3b29_asana.png' },
+    { name: 'Slack', src: 'https://cdn.prod.website-files.com/6728a3e6f4f4161c235bc519/6728a6be8c099d4e1ed55770_slack.png' },
+    { name: 'Loom', src: 'https://cdn.prod.website-files.com/6728a3e6f4f4161c235bc519/6728a6be5b31ba243e4da377_loom.png' },
+    { name: 'Spotify', src: 'https://cdn.prod.website-files.com/6728a3e6f4f4161c235bc519/6728a6bea97e140677496dae_spotify.png' },
+    { name: 'Webflow', src: 'https://cdn.prod.website-files.com/6728a3e6f4f4161c235bc519/6728a6bea73fcc6ee568f6f0_webflow.png' },
+    { name: 'Osmo', src: 'https://cdn.prod.website-files.com/6728a3e6f4f4161c235bc519/6728b10be6bc07649a51369e_Osmo.png' },
+    { name: 'Illustrator', src: 'https://cdn.prod.website-files.com/6728a3e6f4f4161c235bc519/6728a6bdf9d004f8a9cf3b09_adobe-illustrator.png' },
+    { name: 'Figma', src: 'https://cdn.prod.website-files.com/6728a3e6f4f4161c235bc519/6728a6be1de916069b5e1aaa_figma.png' },
+    { name: 'Photoshop', src: 'https://cdn.prod.website-files.com/6728a3e6f4f4161c235bc519/6728a6be1de916069b5e1a86_adobe-photoshop.png' },
+    { name: 'Premiere', src: 'https://cdn.prod.website-files.com/6728a3e6f4f4161c235bc519/6728a6be051d32942a7aa31e_adobe-premierepro.png' },
+];
+
 // --- Helper Functions ---
 const loadScript = (src) => {
     return new Promise((resolve, reject) => {
@@ -250,6 +265,53 @@ const TearStripStyles = React.memo(() => (
         }
     `}} />
 ));
+
+// --- Dock Component ---
+const Dock = () => {
+    const [hoveredIndex, setHoveredIndex] = useState(null);
+
+    return (
+        <div className="fixed inset-x-0 bottom-0 pointer-events-none z-[100] flex flex-col items-center justify-end pb-[8.3vh]">
+            <nav className="pointer-events-auto">
+                <ul className="flex flex-row items-end justify-center p-0 m-0 text-[1vw]">
+                    {DOCK_APPS.map((app, index) => {
+                        // Calculate Scale Logic based on sibling proximity
+                        let width = '5em'; // Default width
+                        
+                        if (hoveredIndex !== null) {
+                            const dist = Math.abs(hoveredIndex - index);
+                            if (dist === 0) width = '8em';       // Hovered
+                            else if (dist === 1) width = '7em';  // Close Sibling
+                            else if (dist === 2) width = '6em';  // Far Sibling
+                        }
+
+                        return (
+                            <li 
+                                key={app.name}
+                                className="relative flex items-center justify-center transition-[width] duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] group"
+                                style={{ width }}
+                                onMouseEnter={() => setHoveredIndex(index)}
+                                onMouseLeave={() => setHoveredIndex(null)}
+                            >
+                                <a href="#" className="relative flex items-center justify-center w-full h-full px-[0.5em] z-10">
+                                    <img 
+                                        src={app.src} 
+                                        alt={`${app.name} icon`} 
+                                        className="w-full object-contain" 
+                                        loading="eager"
+                                    />
+                                </a>
+                                <div className="absolute top-0 -translate-y-[80%] opacity-0 group-hover:opacity-100 group-hover:-translate-y-[140%] transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] bg-neutral-100 px-[0.5em] py-[0.4em] rounded-xl text-[1em] whitespace-nowrap font-normal text-black z-0 pointer-events-none">
+                                    {app.name}
+                                </div>
+                            </li>
+                        )
+                    })}
+                </ul>
+            </nav>
+        </div>
+    );
+};
 
 // --- TearStrip Component ---
 const TearStrip = ({ children, onTearComplete }) => {
@@ -751,7 +813,7 @@ const WidgetCard = ({ widget, isGhost = false, isValid = true, style, onRemove, 
                             </div>
 
                             {/* Hourly Strip */}
-                            <div className="flex justify-between mt-auto border-t border-white/10 pt-3">
+                            <div className="flex justify-between">
                                 {[
                                     { time: '9 PM', icon: Cloud, temp: '47°' },
                                     { time: '10 PM', icon: Cloud, temp: '46°' },
@@ -1185,9 +1247,12 @@ export default function Grid() {
                 />
             )}
 
-            <div className="absolute bottom-8 left-1/2 -translate-x-1/2 bg-black/60 backdrop-blur-md px-6 py-3 rounded-full border border-white/10 text-sm font-medium text-white/80 shadow-xl pointer-events-none font-text">
+            {/* NEW: Dock Component Added at Bottom */}
+            <Dock />
+
+            {/* <div className="absolute bottom-8 left-1/2 -translate-x-1/2 bg-black/60 backdrop-blur-md px-6 py-3 rounded-full border border-white/10 text-sm font-medium text-white/80 shadow-xl pointer-events-none font-text">
                 {draggingId ? "Release to snap" : "Drag widgets to organize"}
-            </div>
+            </div> */}
         </div>
     );
 }
