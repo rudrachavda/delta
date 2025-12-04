@@ -308,7 +308,7 @@ const Dock = () => {
     return (
         <div className="fixed inset-x-0 bottom-0 pointer-events-none z-[100] flex flex-col items-center justify-end pb-[8.3vh]">
             {/* Rounded dock background */}
-            <div className=" pointer-events-auto bg-white/20 backdrop-blur-l rounded-3xl px-2 h-[5em] flex items-center overflow-visible transition-all duration-500" >
+            <div className=" pointer-events-auto bg-white/20 backdrop-blur-l rounded-3xl px-[0.8em] h-[6em] flex items-center overflow-visible transition-all duration-500" >
                 <nav>
                     <ul className="flex flex-row items-center justify-center p-0 m-0 text-[1vw]">
                         {DOCK_APPS.map((app, index) => {
