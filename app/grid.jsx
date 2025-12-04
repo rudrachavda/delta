@@ -8,7 +8,8 @@ import {
     Car,
     Wind,
     PlugZap,
-    Cable
+    Cable,
+    Trash2 // Added for menu
 } from 'lucide-react';
 
 // --- Constants & Config ---
@@ -48,7 +49,6 @@ const getDimensions = (size) => {
 };
 
 // --- CSS ---
-// FIX: Wrapped in React.memo to prevent font reloading during drag
 const TearStripStyles = React.memo(() => (
     <style dangerouslySetInnerHTML={{
         __html: `
@@ -91,13 +91,22 @@ const TearStripStyles = React.memo(() => (
             --bg-size: 0;
         }
 
+        /* Context Menu Animation */
+        @keyframes scaleIn {
+            from { opacity: 0; transform: scale(0.95); }
+            to { opacity: 1; transform: scale(1); }
+        }
+        .context-menu-anim {
+            animation: scaleIn 0.1s ease-out forwards;
+        }
+
         .tear-strip {
             font-family: 'SF Pro Rounded', sans-serif; /* UI Label uses Rounded */
             font-size: 1.3rem;
             font-weight: bold;
             width: clamp(300px, 470px, 28vw);
             width: 344px;
-            height: 78px;
+            height: 64px;
             display: grid;
             place-items: center;
         /* translate: 0 -80%;*/
@@ -439,11 +448,70 @@ const StickyNoteWrapper = ({ onRemove }) => {
     );
 };
 
+// --- Context Menu Component (ADDED) ---
+const ContextMenu = ({ x, y, widgetId, type, currentSize, onClose, onResize, onDelete }) => {
+    const getSizes = () => {
+        if (type === 'battery') return ['small', 'medium', 'large'];
+        if (type === 'sticky') return ['medium', 'large'];
+        return ['small', 'medium', 'large'];
+    };
+    const sizes = getSizes();
+
+    return (
+        <div
+            className="fixed z-[999] bg-zinc-900/90 backdrop-blur-xl border border-white/10 rounded-xl shadow-2xl p-1.5 w-48 flex flex-col gap-1 context-menu-anim"
+            style={{ top: y, left: x }}
+            onClick={(e) => e.stopPropagation()}
+        >
+            <div className="px-2 py-1 text-xs font-bold text-zinc-500 uppercase tracking-wider font-rounded border-b border-white/5 mb-1 pb-2">
+                Widget Options
+            </div>
+
+            {sizes.map((size) => (
+                <button
+                    key={size}
+                    onClick={() => { onResize(widgetId, size); onClose(); }}
+                    className={`flex items-center justify-between px-3 py-2 rounded-lg text-sm transition-colors font-text ${currentSize === size ? 'bg-blue-500 text-white font-medium' : 'text-zinc-300 hover:bg-white/10'}`}
+                >
+                    <span className="capitalize">{size}</span>
+                    {currentSize === size && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
+                </button>
+            ))}
+
+            <div className="h-px bg-white/10 my-1 mx-1" />
+            <button
+                onClick={() => { onDelete(widgetId); onClose(); }}
+                className="flex items-center px-3 py-2 rounded-lg text-sm text-red-400 hover:bg-red-500/10 hover:text-red-300 transition-colors font-text w-full text-left"
+            >
+                <Trash2 size={14} className="mr-2" />
+                Remove Widget
+            </button>
+        </div>
+    );
+};
+
 
 // --- Main Grid Component ---
 
-const WidgetCard = ({ widget, isGhost = false, isValid = true, style, onRemove }) => {
+const WidgetCard = ({ widget, isGhost = false, isValid = true, style, onRemove, onContextMenu }) => {
     const { w, h } = getDimensions(widget.size);
+    const cardRef = useRef(null);
+
+    // Added: Deletion Animation Trigger
+    const handleRemoveAnimation = (id) => {
+        if (cardRef.current && window.gsap) {
+            window.gsap.to(cardRef.current, {
+                y: 500,
+                rotate: 10,
+                opacity: 0,
+                duration: 0.5,
+                ease: "power2.in",
+                onComplete: () => onRemove(id)
+            });
+        } else {
+            onRemove(id);
+        }
+    };
 
     let ghostStyles = 'bg-white/20 border-white/30';
     if (isGhost) {
@@ -467,6 +535,13 @@ const WidgetCard = ({ widget, isGhost = false, isValid = true, style, onRemove }
 
     if (isGhost) {
         return <div style={{ ...style, width: w, height: h }} className={`${baseClasses} rounded-[2rem]`} />;
+    }
+
+    // Pass the animation handler up to the context menu
+    const safeOnContextMenu = (e, w) => {
+        if (onContextMenu) {
+            onContextMenu(e, w, handleRemoveAnimation);
+        }
     }
 
     const renderContent = () => {
@@ -569,8 +644,13 @@ const WidgetCard = ({ widget, isGhost = false, isValid = true, style, onRemove }
 
     return (
         <div
+            ref={cardRef}
             style={{ ...style, width: w, height: h }}
             className={`${baseClasses} rounded-[2rem] active:scale-[1.02] active:shadow-3xl active:z-50`}
+            onContextMenu={(e) => {
+                e.preventDefault();
+                safeOnContextMenu(e, widget);
+            }}
         >
             <div className={`${contentClasses} ${!isSticky ? 'cursor-grab active:cursor-grabbing' : ''}`}>
                 {renderContent()}
@@ -596,6 +676,7 @@ export default function Grid() {
     const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
     const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
     const containerRef = useRef(null);
+    const [contextMenu, setContextMenu] = useState(null);
 
     useEffect(() => {
         const updateSize = () => {
@@ -613,6 +694,23 @@ export default function Grid() {
 
     const removeWidget = (id) => {
         setWidgets(prev => prev.filter(w => w.id !== id));
+    };
+
+    const handleResize = (id, newSize) => {
+        setWidgets(prev => prev.map(w =>
+            w.id === id ? { ...w, size: newSize } : w
+        ));
+    };
+
+    const handleContextMenu = (e, widget, deleteAnimationCallback) => {
+        setContextMenu({
+            x: e.clientX,
+            y: e.clientY,
+            widgetId: widget.id,
+            type: widget.type,
+            currentSize: widget.size,
+            deleteAnimationCallback
+        });
     };
 
     const getPixelPosition = (col, row) => ({
@@ -649,6 +747,7 @@ export default function Grid() {
     };
 
     const handleMouseDown = (e, id, currentX, currentY) => {
+        setContextMenu(null); // Close menu on interaction
         // Prevent moving widget if clicking inside the tear strip handle or sticky note textarea
         if (e.target.closest('.tear-strip__handle') || e.target.tagName === 'TEXTAREA') return;
 
@@ -701,6 +800,7 @@ export default function Grid() {
             onMouseMove={handleMouseMove}
             onMouseUp={handleMouseUp}
             onMouseLeave={handleMouseUp}
+            onClick={() => setContextMenu(null)}
         >
             <div className="absolute inset-0 bg-black/20 pointer-events-none" />
             <TearStripStyles />
@@ -766,12 +866,29 @@ export default function Grid() {
                                 <WidgetCard
                                     widget={widget}
                                     onRemove={removeWidget}
+                                    onContextMenu={handleContextMenu}
                                 />
                             </div>
                         </React.Fragment>
                     );
                 })}
             </div>
+
+            {/* Context Menu Render */}
+            {contextMenu && (
+                <ContextMenu
+                    {...contextMenu}
+                    onClose={() => setContextMenu(null)}
+                    onResize={handleResize}
+                    onDelete={() => {
+                        if (contextMenu.deleteAnimationCallback) {
+                            contextMenu.deleteAnimationCallback(contextMenu.widgetId);
+                        } else {
+                            removeWidget(contextMenu.widgetId);
+                        }
+                    }}
+                />
+            )}
 
             <div className="absolute bottom-8 left-1/2 -translate-x-1/2 bg-black/60 backdrop-blur-md px-6 py-3 rounded-full border border-white/10 text-sm font-medium text-white/80 shadow-xl pointer-events-none font-text">
                 {draggingId ? "Release to snap" : "Drag widgets to organize"}
