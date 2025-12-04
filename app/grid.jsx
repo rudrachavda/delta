@@ -270,45 +270,79 @@ const TearStripStyles = React.memo(() => (
 const Dock = () => {
     const [hoveredIndex, setHoveredIndex] = useState(null);
 
+    const BASE_WIDTH = 5;   // default width in em
+    const HOVER_WIDTH = 8;  // hovered
+    const CLOSE_WIDTH = 7;  // 1 away
+    const FAR_WIDTH = 6;    // 2 away
+
+    // Vertical rise values (em units)
+    const BASE_RISE = 0;
+    const HOVER_RISE = -2.5;
+    const CLOSE_RISE = -1.5;
+    const FAR_RISE = -0.8;
+
+    const getMetrics = (index) => {
+        let width = BASE_WIDTH;
+        let rise = BASE_RISE;
+
+        if (hoveredIndex !== null) {
+            const dist = Math.abs(hoveredIndex - index);
+            if (dist === 0) {
+                width = HOVER_WIDTH;
+                rise = HOVER_RISE;
+            } else if (dist === 1) {
+                width = CLOSE_WIDTH;
+                rise = CLOSE_RISE;
+            } else if (dist === 2) {
+                width = FAR_WIDTH;
+                rise = FAR_RISE;
+            }
+        }
+
+        return {
+            width: `${width}em`,
+            transform: `translateY(${rise}em)`,
+        };
+    };
+
     return (
         <div className="fixed inset-x-0 bottom-0 pointer-events-none z-[100] flex flex-col items-center justify-end pb-[8.3vh]">
-            <nav className="pointer-events-auto">
-                <ul className="flex flex-row items-end justify-center p-0 m-0 text-[1vw]">
-                    {DOCK_APPS.map((app, index) => {
-                        // Calculate Scale Logic based on sibling proximity
-                        let width = '5em'; // Default width
-                        
-                        if (hoveredIndex !== null) {
-                            const dist = Math.abs(hoveredIndex - index);
-                            if (dist === 0) width = '8em';       // Hovered
-                            else if (dist === 1) width = '7em';  // Close Sibling
-                            else if (dist === 2) width = '6em';  // Far Sibling
-                        }
+            {/* Rounded dock background */}
+            <div className=" pointer-events-auto bg-white/20 backdrop-blur-l rounded-3xl px-2 h-[5em] flex items-center overflow-visible transition-all duration-500" >
+                <nav>
+                    <ul className="flex flex-row items-center justify-center p-0 m-0 text-[1vw]">
+                        {DOCK_APPS.map((app, index) => {
+                            const { width, transform } = getMetrics(index);
 
-                        return (
-                            <li 
-                                key={app.name}
-                                className="relative flex items-center justify-center transition-[width] duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] group"
-                                style={{ width }}
-                                onMouseEnter={() => setHoveredIndex(index)}
-                                onMouseLeave={() => setHoveredIndex(null)}
-                            >
-                                <a href="#" className="relative flex items-center justify-center w-full h-full px-[0.5em] z-10">
-                                    <img 
-                                        src={app.src} 
-                                        alt={`${app.name} icon`} 
-                                        className="w-full object-contain" 
-                                        loading="eager"
-                                    />
-                                </a>
-                                <div className="absolute top-0 -translate-y-[80%] opacity-0 group-hover:opacity-100 group-hover:-translate-y-[140%] transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] bg-neutral-100 px-[0.5em] py-[0.4em] rounded-xl text-[1em] whitespace-nowrap font-normal text-black z-0 pointer-events-none">
-                                    {app.name}
-                                </div>
-                            </li>
-                        )
-                    })}
-                </ul>
-            </nav>
+                            return (
+                                <li
+                                    key={app.name}
+                                    className="relative flex items-end justify-center transition-[width,transform] duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] group"
+                                    style={{ width, transform }}
+                                    onMouseEnter={() => setHoveredIndex(index)}
+                                    onMouseLeave={() => setHoveredIndex(null)}
+                                >
+                                    <a
+                                        href="#"
+                                        className="relative flex items-center justify-center w-full h-full px-[0.5em] z-10"
+                                    >
+                                        <img
+                                            src={app.src}
+                                            alt={`${app.name} icon`}
+                                            loading="eager"
+                                            className="w-full h-auto object-contain"
+                                        />
+                                    </a>
+
+                                    <div className="absolute top-0 -translate-y-[80%] opacity-0 group-hover:opacity-100 group-hover:-translate-y-[140%] transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] bg-neutral-100 px-[0.5em] py-[0.4em] rounded-xl text-[1em] whitespace-nowrap font-normal text-black z-0 pointer-events-none">
+                                        {app.name}
+                                    </div>
+                                </li>
+                            );
+                        })}
+                    </ul>
+                </nav>
+            </div>
         </div>
     );
 };
@@ -924,7 +958,7 @@ const WidgetCard = ({ widget, isGhost = false, isValid = true, style, onRemove, 
                                     <List size={18} strokeWidth={3} />
                                 </div>
                                 <div>
-                                <span className="text-4xl font-bold font-rounded block">6</span>
+                                    <span className="text-4xl font-bold font-rounded block">6</span>
                                     <div className="text-[13px] font-bold text-orange-500 font-text">Reminders</div>
                                 </div>
                             </div>
