@@ -9,7 +9,14 @@ import {
     Wind,
     PlugZap,
     Cable,
-    Trash2 // Added for menu
+    Trash2,
+    List,
+    Circle,
+    Cloud, // Added
+    Sun,   // Added
+    Moon,  // Added
+    Navigation, // Added for location arrow
+    TriangleAlert // Added for hazard warning
 } from 'lucide-react';
 
 // --- Constants & Config ---
@@ -111,7 +118,7 @@ const TearStripStyles = React.memo(() => (
             place-items: center;
         /* translate: 0 -80%;*/
             position: relative;
-            border: 3px dashed hsl(0 0% 81%);
+            border: 2px dashed hsl(0 0% 81%);
             border-radius: 100px;
             background: linear-gradient(hsl(0 0% 91%), hsl(0 0% 91%)) padding-box;
             color: hsl(0, 0%, 70%);
@@ -565,52 +572,340 @@ const WidgetCard = ({ widget, isGhost = false, isValid = true, style, onRemove, 
                     </div>
                 );
             case 'calendar':
-                return (
-                    <div className="flex h-full bg-white text-black">
-                        <div className="w-1/3 bg-red-500 text-white p-4 flex flex-col items-center justify-center">
-                            <span className="text-lg font-medium uppercase font-rounded">Wed</span>
-                            <span className="text-6xl font-bold tracking-tighter font-rounded">3</span>
-                        </div>
-                        <div className="flex-1 p-4 flex flex-col space-y-3">
-                            <div className="border-l-4 border-orange-400 pl-3 py-1">
-                                <p className="text-xs text-gray-500 font-bold uppercase font-rounded">10:00 AM</p>
-                                <p className="font-semibold text-sm font-text">Team Standup</p>
+                if (widget.type === 'calendar') {
+                    // --- SMALL: Single Event Focus ---
+                    if (widget.size === 'small') {
+                        return (
+                            <div className="flex flex-col h-full bg-zinc-900 p-4 relative">
+                                <div className="text-red-500 font-bold uppercase text-[10px] tracking-wider font-rounded mb-0.5">Wednesday</div>
+                                <div className="text-4xl font-normal text-white font-rounded mb-1">3</div>
+
+                                <div className="text-zinc-500 text-[10px] font-bold uppercase tracking-wider mb-1 font-text">Tomorrow</div>
+                                <div className="flex items-center text-white text-xs font-bold font-text">
+                                    <div className="w-1 h-3 bg-yellow-500 rounded-full mr-2"></div>
+                                    4 all-day events
+                                </div>
                             </div>
-                            <div className="border-l-4 border-blue-400 pl-3 py-1">
-                                <p className="text-xs text-gray-500 font-bold uppercase font-rounded">1:00 PM</p>
-                                <p className="font-semibold text-sm font-text">Design Review</p>
+                        );
+                    }
+
+                    // --- MEDIUM: Agenda List ---
+                    if (widget.size === 'medium') {
+                        return (
+                            <div className="flex h-full bg-zinc-900 p-5 gap-6">
+                                {/* Left Column: Date & Pills */}
+                                <div className="flex flex-col w-[45%]">
+                                    <div className="text-red-500 font-bold uppercase text-[10px] tracking-wider font-rounded mb-0.5">Wednesday</div>
+                                    <div className="text-4xl font-normal text-white font-rounded mb-1">3</div>
+
+                                    <div className="flex flex-col gap-1">
+                                        <div className="bg-yellow-500/20 text-yellow-400 px-0.5 py-0 rounded-full text-[10px] font-bold font-text truncate flex items-center">
+                                            <Circle size={10} className="mr-1.5 inline fill-current" />
+                                            Self Assessment Qu...
+                                        </div>
+                                        <div className="bg-yellow-500/20 text-yellow-400 px-0.5 py-0 rounded-full text-[10px] font-bold font-text truncate flex items-center">
+                                            <Circle size={10} className="mr-1.5 inline fill-current" />
+                                            Self Assessment Qu...
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Right Column: Up Next */}
+                                <div className="flex flex-col flex-1 border-l border-white/10 pl-5">
+                                    <div className="mb-3">
+                                        <div className="text-zinc-500 text-[10px] font-bold uppercase tracking-wider mb-1 font-text leading-none">Tomorrow</div>
+                                        <div className="flex items-center text-white text-xs font-bold font-text">
+                                            <div className="w-1 h-3 bg-yellow-500 rounded-full mr-1"></div>
+                                            4 all-day events
+                                        </div>
+                                    </div>
+
+                                    <div>
+                                        <div className="text-zinc-500 text-[10px] font-bold uppercase tracking-wider mb-2 font-text leading-none">Friday, Dec 5</div>
+                                        <div className="flex flex-col gap-1">
+                                            <div className="border-l-2 rounded-xs bg-teal-300/10 border-teal-200 pl-1 p-0.5">
+                                                <div className="text-teal-100 font-bold text-[11px] font-text leading-3">PHYS 5A - Lecture</div>
+                                                <div className="text-teal-100 text-[11px] font-text leading-3">10:40 – 11:45AM</div>
+                                            </div>
+                                            <div className="border-l-2 rounded-xs bg-teal-300/10 border-teal-200 pl-1 p-0.5">
+                                                <div className="text-teal-100 font-bold text-[11px] font-text leading-3">AM 10 - Lecture</div>
+                                                <div className="text-teal-100 text-[11px] font-text leading-3">1:20 – 2:25PM</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        );
+                    }
+
+                    // --- LARGE: Split Timeline ---
+                    return (
+                        <div className="flex h-full bg-zinc-900 text-white relative">
+                            {/* Left Panel: Today */}
+                            <div className="w-1/2 p-5 border-r border-white/10 flex flex-col relative">
+                                <div className="mb-4">
+                                    <div className="text-red-500 font-bold uppercase text-[10px] tracking-wider font-rounded mb-0.5">Wednesday</div>
+                                    <div className="text-4xl font-normal text-white font-rounded">3</div>
+                                    <div className="mt-2 flex items-center text-xs font-bold text-white font-text">
+                                        <div className="text-yellow-400 rounded mr-1"><Circle size={12} className="fill-current" /></div>
+                                        2 all-day events
+                                    </div>
+                                </div>
+
+                                {/* Timeline Visualization */}
+                                <div className="flex-1 relative mt-2">
+                                    {/* Time Markers */}
+                                    <div className="absolute inset-0 flex flex-col justify-between text-zinc-600 text-[10px] font-bold font-text py-1">
+                                        <span>8</span>
+                                        <span>9</span>
+                                        <span>10</span>
+                                        <span>11</span>
+                                        <span>12</span>
+                                    </div>
+                                    {/* Horizontal Lines */}
+                                    <div className="absolute inset-0 flex flex-col justify-between py-2 pl-6">
+                                        <div className="w-full h-px bg-white/10"></div>
+                                        <div className="w-full h-px bg-white/10"></div>
+                                        <div className="w-full h-px bg-white/10"></div>
+                                        <div className="w-full h-px bg-white/10"></div>
+                                        <div className="w-full h-px bg-white/10"></div>
+                                    </div>
+                                    {/* Current Time Indicator (Red Line) */}
+                                    <div className="absolute top-[45%] left-6 right-0 h-[2px] bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.6)] flex items-center">
+                                        <div className="w-1.5 h-1.5 bg-red-500 rounded-full -ml-[3px]"></div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Right Panel: Tomorrow */}
+                            <div className="w-1/2 p-5 flex flex-col">
+                                <div className="mb-4 pt-1">
+                                    <div className="text-zinc-500 font-bold uppercase text-[10px] tracking-wider font-rounded mb-2">Tomorrow</div>
+                                    <div className="flex items-center text-xs font-bold text-white font-text">
+                                        <div className="text-yellow-400 rounded mr-1"><Circle size={12} className="fill-current" /></div>
+                                        4 all-day events
+                                    </div>
+                                </div>
+
+                                {/* Timeline Visualization */}
+                                <div className="flex-1 relative mt-2">
+                                    {/* Time Markers */}
+                                    <div className="absolute inset-0 flex flex-col justify-between text-zinc-600 text-[10px] font-bold font-text py-1">
+                                        <span>9</span>
+                                        <span>10</span>
+                                        <span>11</span>
+                                        <span>12</span>
+                                        <span>1</span>
+                                        <span>2</span>
+                                        <span>3</span>
+                                        <span>4</span>
+                                    </div>
+                                    {/* Horizontal Lines */}
+                                    <div className="absolute inset-0 flex flex-col justify-between py-2 pl-6">
+                                        {[...Array(8)].map((_, i) => (
+                                            <div key={i} className="w-full h-px bg-white/10"></div>
+                                        ))}
+                                    </div>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                );
+                    );
+                }
             case 'weather':
-                return (
-                    <div className="p-6 h-full flex items-center justify-between bg-gradient-to-br from-blue-500/30 to-blue-900/10">
-                        <div className="flex flex-col">
-                            <span className="text-lg font-medium font-text">Santa Cruz</span>
-                            <span className="text-5xl font-light font-rounded">72°</span>
-                            <span className="text-sm text-blue-200 mt-1 font-text">Mostly Sunny</span>
+                if (widget.size === 'small') {
+                    return (
+                        <div className="flex flex-col justify-between h-full p-4 bg-[#1C1C1E] text-white relative">
+                            <div>
+                                <div className="flex items-center gap-1 text-[13px] font-medium font-text">
+                                    Santa Cruz <Navigation size={10} className="fill-current" />
+                                </div>
+                                <div className="text-5xl font-light font-rounded mt-1">48°</div>
+                            </div>
+                            <div className="mt-auto">
+                                <Cloud size={16} className="mb-2 fill-current text-white" />
+                                <div className="text-[11px] font-medium leading-tight font-text">
+                                    Beach hazards statement & 1 more
+                                </div>
+                            </div>
                         </div>
-                        <CloudSun size={64} className="text-yellow-400 drop-shadow-lg" />
+                    );
+                }
+
+                // --- MEDIUM WEATHER ---
+                if (widget.size === 'medium') {
+                    return (
+                        <div className="flex flex-col h-full p-5 bg-[#1C1C1E] text-white relative">
+                            <div className="flex justify-between items-start mb-2">
+                                <div>
+                                    <div className="flex items-center gap-1 text-[13px] font-medium font-text">
+                                        Santa Cruz <Navigation size={10} className="fill-current" />
+                                    </div>
+                                    <div className="text-5xl font-light font-rounded">48°</div>
+                                </div>
+                                <div className="text-right flex flex-col items-end">
+                                    <Cloud size={24} className="mb-1 fill-current text-white" />
+                                    <div className="text-[11px] font-medium leading-tight font-text max-w-[140px]">
+                                        Beach hazards statement & 1 more
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Hourly Strip */}
+                            <div className="flex justify-between mt-auto border-t border-white/10 pt-3">
+                                {[
+                                    { time: '9 PM', icon: Cloud, temp: '47°' },
+                                    { time: '10 PM', icon: Cloud, temp: '46°' },
+                                    { time: '11 PM', icon: Cloud, temp: '45°' },
+                                    { time: '12 AM', icon: Cloud, temp: '45°' },
+                                    { time: '1 AM', icon: Cloud, temp: '45°' },
+                                    { time: '2 AM', icon: Cloud, temp: '44°' },
+                                ].map((item, i) => (
+                                    <div key={i} className="flex flex-col items-center gap-1.5">
+                                        <span className="text-[10px] text-zinc-400 font-bold font-text">{item.time}</span>
+                                        <item.icon size={16} className="fill-current text-white" />
+                                        <span className="text-[12px] font-medium font-rounded">{item.temp}</span>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    );
+                }
+
+                // --- LARGE WEATHER ---
+                return (
+                    <div className="flex flex-col h-full p-6 bg-[#1C1C1E] text-white relative">
+                        {/* Header */}
+                        <div className="flex justify-between items-start mb-1">
+                            <div>
+                                <div className="flex items-center gap-1 text-[13px] font-medium font-text">
+                                    Santa Cruz <Navigation size={10} className="fill-current" />
+                                </div>
+                                <div className="text-6xl font-light font-rounded mt-[-4px]">48°</div>
+                            </div>
+                            <div className="text-right">
+                                <div className="flex justify-end mb-1"><Cloud size={24} className="fill-current text-white" /></div>
+                                <div className="text-[13px] font-medium font-text">Mostly Cloudy</div>
+                                <div className="text-[13px] font-medium font-text">H:61° L:44°</div>
+                            </div>
+                        </div>
+
+                        {/* Alert Line */}
+                        <div className="flex items-center gap-2 py-2 border-b border-white/10 mb-3">
+                            <TriangleAlert size={14} className="text-white fill-white" />
+                            <span className="text-[11px] font-medium font-text">Beach Hazards Statement & 1 More</span>
+                        </div>
+
+                        {/* Hourly Strip */}
+                        <div className="flex justify-between mb-5 border-b border-white/10 pb-4">
+                            {[
+                                { time: '9 PM', icon: Cloud, temp: '47°' },
+                                { time: '10 PM', icon: Cloud, temp: '46°' },
+                                { time: '11 PM', icon: Cloud, temp: '45°' },
+                                { time: '12 AM', icon: Cloud, temp: '45°' },
+                                { time: '1 AM', icon: Cloud, temp: '45°' },
+                                { time: '2 AM', icon: Cloud, temp: '44°' },
+                            ].map((item, i) => (
+                                <div key={i} className="flex flex-col items-center gap-1.5">
+                                    <span className="text-[10px] text-zinc-400 font-bold font-text">{item.time}</span>
+                                    <item.icon size={16} className="fill-current text-white" />
+                                    <span className="text-[13px] font-medium font-rounded">{item.temp}</span>
+                                </div>
+                            ))}
+                        </div>
+
+                        {/* Daily Forecast List */}
+                        <div className="flex flex-col gap-3">
+                            {[
+                                { day: 'Thu', icon: Sun, low: '43°', high: '62°', range: 'from-cyan-400 to-green-400' },
+                                { day: 'Fri', icon: Sun, low: '44°', high: '61°', range: 'from-cyan-400 to-green-400' },
+                                { day: 'Sat', icon: Sun, low: '47°', high: '64°', range: 'from-green-400 to-yellow-400' },
+                                { day: 'Sun', icon: Sun, low: '48°', high: '65°', range: 'from-green-400 to-yellow-400' },
+                            ].map((day, i) => (
+                                <div key={i} className="flex items-center justify-between font-text font-bold">
+                                    <span className="w-10 text-[13px]">{day.day}</span>
+                                    <day.icon size={16} className="text-yellow-400 fill-current" />
+                                    <div className="flex items-center gap-3 flex-1 px-4">
+                                        <span className="text-[13px] text-zinc-400 w-6 text-right">{day.low}</span>
+                                        <div className="h-1 flex-1 bg-zinc-700 rounded-full relative overflow-hidden">
+                                            <div className={`absolute top-0 bottom-0 left-0 w-[80%] bg-gradient-to-r ${day.range} rounded-full`} />
+                                        </div>
+                                        <span className="text-[13px] text-white w-6">{day.high}</span>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
                     </div>
                 );
             case 'reminders':
-                return (
-                    <div className="p-4 pt-3 pb-3 h-full flex flex-col bg-neutral-800/80">
-                        <div className="flex justify-between items-center mb-0">
-                            <div className="flex items-center space-x-2 text-orange-400 text-[1em]">
-                                <span className="font-bold font-rounded tracking-wide">Reminders</span>
+                // --- SMALL: Simple Count (Unchanged) ---
+                if (widget.size === 'small') {
+                    return (
+                        <div className="p-4 flex flex-col justify-between h-full bg-zinc-800">
+                            <div className="w-8 h-8 rounded-full bg-orange-500 flex items-center justify-center text-white mb-2">
+                                <List size={18} strokeWidth={3} />
                             </div>
-                            <span className="text-2xl font-bold font-rounded">4</span>
+                            <div>
+                                <span className="text-4xl font-bold font-rounded block">6</span>
+                                <div className="text-[13px] font-bold text-orange-500 font-text">Reminders</div>
+                            </div>
                         </div>
-                        <ul className="space-y-3 mt-1">
-                            {['Call Mom', 'Buy Milk', 'eat food'].map((item, i) => (
-                                <li key={i} className="flex items-center space-x-3 group">
-                                    <div className="w-4 h-4 rounded-full border-2 border-white/30 group-hover:border-orange-400 transition-colors" />
-                                    <span className="text-sm font-medium truncate font-text tracking-tight">{item}</span>
-                                </li>
+                    );
+                }
+
+                // --- MEDIUM: Split View ---
+                if (widget.size === 'medium') {
+                    return (
+                        <div className="flex h-full bg-[#1C1C1E] p-4">
+                            {/* Left Panel */}
+                            <div className="flex flex-col justify-between w-[35%]">
+                                <div className="w-8 h-8 rounded-full bg-orange-500 flex items-center justify-center text-white">
+                                    <List size={18} strokeWidth={3} />
+                                </div>
+                                <div>
+                                <span className="text-4xl font-bold font-rounded block">6</span>
+                                    <div className="text-[13px] font-bold text-orange-500 font-text">Reminders</div>
+                                </div>
+                            </div>
+
+                            {/* Right Panel: List */}
+                            <div className="flex-1 pl-4 flex flex-col justify-center gap-2.5 overflow-hidden">
+                                {['Catch Up on Physics...', 'Tau Beta Payment', 'Pay Tuition', 'Do PS10'].map((item, i) => (
+                                    <div key={i} className="flex items-center gap-3">
+                                        <div className="w-3.5 h-3.5 rounded-full border-[1.5px] border-zinc-500 shrink-0" />
+                                        <span className="text-[13px] font-medium text-white truncate font-text">{item}</span>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    );
+                }
+
+                // --- LARGE: Full List with Header ---
+                return (
+                    <div className="flex flex-col h-full bg-[#1C1C1E] p-5">
+                        {/* Header */}
+                        <div className="flex justify-between items-start mb-4">
+                            <div>
+                                <div className="text-[42px] font-bold font-rounded text-white leading-none">6</div>
+                                <div className="text-[15px] font-bold text-orange-500 font-text mt-1">Reminders</div>
+                            </div>
+                            <div className="w-10 h-10 rounded-full bg-orange-500 flex items-center justify-center text-white">
+                                <List size={20} strokeWidth={3} />
+                            </div>
+                        </div>
+
+                        {/* Divider */}
+                        <div className="h-px bg-zinc-700/50 mb-4" />
+
+                        {/* List */}
+                        <div className="flex-1 flex flex-col gap-3.5 overflow-hidden">
+                            {['Catch Up on Physics Lecture', 'Tau Beta Payment', 'Pay Tuition', 'Do PS10', 'Quiz 10', 'Hwk 10'].map((item, i) => (
+                                <div key={i} className="flex items-center gap-3">
+                                    <div className="w-4 h-4 rounded-full border-[1.5px] border-zinc-500 shrink-0" />
+                                    <span className="text-[14px] font-medium text-white truncate font-text">{item}</span>
+                                </div>
                             ))}
-                        </ul>
+                        </div>
                     </div>
                 );
             case 'car':

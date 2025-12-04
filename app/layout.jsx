@@ -18,7 +18,7 @@ export const metadata = {
   title: "Delta",
   description: "Ideas",
   icons: {
-    icon: "/favicon2.svg",
+    icon: "/favicon.svg",
   },
 };
 
